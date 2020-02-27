@@ -1,0 +1,176 @@
+\chapter{State of the Art} \label{chap:stateoftheart}
+
+\section{Reinforcement Learning}
+\todo{in introduction?}
+According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with ideas coming from dynamical systems theory, specifically with the \acf{MDP} that we detail in \mySubsec{subsec:mdp}. One of the challenges that arise in \ac{RL} is the trade-off between exploration and exploitation. To obtain an high reward, an agent must perform actions that it has found to be effective in producing reward. But to discover such actions, it has to try actions that it has not selected before.
+
+\subsection{Markov Decision Processes}\label{subsec:mdp}
+\ac{MDP}s are a formalization of sequential decision making, where actions influence immediate and future rewards. The learner and decision maker is called \emph{agent}, it interacts with the \emph{environment} by selecting the actions and receiving rewards and information on the new situation. The agent seeks to maximize rewards over time through its choice of actions. More specifically, at each time step $t$, the agent receives some representation of the environment's state $s_t \in \Sspace$, and on that basis select an action $a_t \in \Aspace(s)$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $S_{t+1}$.\\
+\newline
+% MDP
+An \ac{MDP}~\citep[]{puterman2014markov} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
+\begin{itemize}
+	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$;
+	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$;
+	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$;
+	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$;
+	\item $\gamma \in [0, 1)$ is the discount factor.
+\end{itemize}
+State and action spaces can be finite or continuous sets. We focus on the solution of continuous \ac{MDP}s as these are the most suitable for modeling continuous control problems.
+The dynamics of the \ac{MDP}s are defined by the function $P$ and ensure the \emph{Markov property}: the probability of each possible value for $s_t$ depends only on the immediately preciding state and action, $s_{t-1}$ and $a_{t-1}$ and not on earlier states and actions.\\
+\newline
+The behaviour of the agent is modeled with a policy $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a possibly stochastic mapping from states to actions. The agent's goal is to maximize the cumulative reward it receives through the time steps. The agent learns the policy according to its goal. In the simplest case the return is the sum of the rewards obtained in subsequent time step, until the final time stp $T$. If the episode has not a finite horizon (\ie $T = \infty$) we have to consider the discount factor $\gamma$ when we define the return. The return, or sum of discounted rewards, from time $t=0$ to $t=T$ for a horizon $T$ is:
+$$r = \sum_{t=0}^{T} \gamma^t r_t, $$where $r_t$ is the reward obtained at step $t$.\\
+\newline
+An important function in \ac{RL} is the Value function, that estimates how good it is for the agent to be in a given state, where the notion of "how good" is defined in terms of expected return. Since the rewards the agent can expect to receive in the future depend on the taken actions, value functions are defined with respect to policies. The value $V^{\pi}(s)$ of policy $\pi$ is the expected sum of discounted rewards starting at state $s$ and following policy $\pi$. It can be defined recursively via the Bellman equation: $$V^{\pi}(s) = \int_a \pi(a|s) \Big(R(s,a) + \gamma\EV_{s'\sim p(\cdot|s,\pi(s))}[V^{\pi}(s')] \Big) \de a.$$
+The optimal policy $\pi^*$ is the policy that maximizes $V^{\pi}(s)$ for all $s \in S$. For control purposes, we can also define an action-value function: $$Q^{\pi}(s,a) = R(s,a) + \gamma\EV_{s'\sim p(\cdot|s,a)}[V^{\pi}(s')].$$
+It represents the return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. 
+In our work the $\gamma$-discounted future-state distribution assumes an important role. It is defined as:
+$$\delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P(S_t = s|S_0=s_0),$$
+where $\mu$ is the initial-state distribution. This function represents the probability of being in a certain state $s$ provided that the policy is $\pi$ and the initial state distribution is $\mu$.
+In order to evaluate a learned policy we use the performance measure:
+$${J(\pi) = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}}R(s,\pi(s))} = \EV_{s\sim\mu}V^{\pi}(s)$$
+\ie the expected reward obtained starting from a state sampled from $\mu$ and following the policy $\pi$ thereafter. We use this measure to define the policy we want to learn as:
+$$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
+An important property of the optimal policy $\pi^{*}$ is the following:
+$$ \pi^{*} \in \arg \max_{\pi} V^{\pi}(s) \forall s \in \Sspace.$$
+
+\subsection{Dynamic Programming}
+\acf{DP} is a collection of algorithms used to compute optimal policies given a knowledge on the environment. It is generally applied to discrete \ac{MDP}s because \ac{DP} is computational expensive and requires that the $P$ and $R$ functions of the \ac{MDP} are known. We can obtain discrete \ac{MDP}s from the definition of continuous \ac{MDP}s if we consider finite sets for $\Sspace$ and $\Aspace$.\\
+\newline
+Optimal policies can be easily obtained once the optimal value functions are found. These optimal functions, that satisfy the Bellman optimality equations, are:
+\begin{align*}
+	V_{*}(s) &= \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V_{*}(s') \Big)\\
+	Q_{*}(s,a) &= \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma \max_{a'} Q_{*}(s', a') \Big).
+\end{align*}
+There are two possibilities to obtain the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
+
+\subsubsection{Policy Iteration}
+Policy iteration starts from an initial policy $\pi_0$ and then alternates two phases of the algorithm: \emph{policy evaluation} and \emph{policy iprovement}. The idea is to obtain $V_{*}$ through the sequence:
+$$ \pi_{0} \xrightarrow{\text{E}} V_{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V_{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V_{*}.
+$$
+The first phase consists in compute the value function for every state, given the current policy $\pi$. In the second phase the policy is updated according to the new values of the value function.
+In policy evaluation the value function is computed for every state as:
+$$
+V(s) = \sum_{s'}P(s'|s,\pi(s)) \Big( R(s,\pi(s)) + \gamma V(s') \Big),
+$$
+until each $V(s)$ converges. Then, for each state the policy is computed according to the following rule:
+$$ \pi(s) = \arg \max_{a} \sum_{s'} P(s'|s,a) \Big( R(s,a) + \gamma V(s') \Big).$$
+\subsubsection{Value Iteration}
+The main drawback in policy iteration is that, for each policy evaluation, multiple iterations are required. If we assume to truncate the policy evaluation after just one update for each state we obtain a special case of policy iteration, called value iteration. In value iteration, the value function at each step is updated as follows:
+$$ V_{k+1}(s) = \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V_{k}(s') \Big),
+$$
+for all $s \in \Sspace$. The sequence ${v_{k}}$ can be shown to converge to $V_{*}$ under the same conditions that guarantee the existence of $V_{*}$.
+\subsubsection{Limit of $\ac{DP}$}
+If the state space is very large,  than even a single update of $V(s) \forall s \in \Sspace$ can be prohibitively expensive. Furthemore, \ac{DP} requires a complete knowledge on the \ac{MDP} that is not always possible. In continuous \ac{MDP}s the methods presented above are not feasible. A solution is \emph{policy serach}, presented in \mySec{sec:polser}.
+
+\subsection{Bounded MDP}
+A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one. A BMDP $M_{\updownarrow} = \langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$ defines a set of exact MDPs. For any exact MDP $M = \langle \Sspace', \Aspace', P', R', \gamma' \rangle$, we have $M \in M_{\updownarrow}$ if $\Sspace = \Sspace', \Aspace = \Aspace', \gamma = \gamma'$, and for any action $a$ and states $s, s', R'(s,a)$ belongs to the interval $R_{\updownarrow}(s,a)$ and $P'(s'|s,a)$ belongs to the interval $P_{\updownarrow}(s'|s,a)$. An interval value function $V_{\updownarrow}$ is a mapping from states to closed real intervals. We use such functions to indicate that the value of a given state for any exact MDP falls within the selected interval. As in the case of (exact) value functions, interval value functions are specified \wrt a fixed policy $\pi$, \ie:
+$$V_{\updownarrow, \pi}(s) = \Big[ \underline{V_{\pi}}(s), \overline{V_{\pi}}(s)\Big] = \Big[ \min_{M \in M_{\updownarrow}} V_{M,\pi}(s), \max_{M \in M_{\updownarrow}} V_{M,\pi}(s)\Big].$$
+According to ~\citep{givan2000bounded}, there exists in $M_{\updownarrow}$ an \ac{MDP} that simultaneously achieves $\underline{V_{\pi}}(s) \forall s$ and another one that achieves $\overline{V_{\pi}}(s) \forall s$.\\
+\newline
+In order to define an optimal value function for a \ac{BMDP} we have to clarify the ordering between intervals. There are two possibilities:
+\begin{align*}
+[l_1, u_1] \leq_{pes} [l_2, u_2] &\Leftrightarrow 
+\begin{cases}
+l_1 < l_2 \text{, or }\\
+l_1 = l_2 \text{ and } u_1 \leq u_2
+\end{cases}\\
+[l_1, u_1] \leq_{opt} [l_2, u_2] &\Leftrightarrow 
+\begin{cases}
+u_1 < u_2 \text{, or }\\
+u_1 = u_2 \text{ and } l_1 \leq l_2
+\end{cases}
+\end{align*}
+We extend these orderings to interval value functions by relating two value functions $V_{1 \updownarrow} \leq V_{2 \updownarrow}$ only when $V_{1 \updownarrow}(s) \leq V_{2 \updownarrow}(s)$ for every state $s$.
+There exists at least one optimistically and one pessimistically optimal policy:
+\begin{align*}
+V_{\updownarrow \text{opt}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{opt} \text{ to order interval value functions}\\
+V_{\updownarrow \text{pes}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{pes} \text{ to order interval value functions}
+\end{align*}
+Now we can modify the value iteraion so that it computes optimal policy value intervals:
+\begin{align*}
+IVI_{\updownarrow \text{opt}}(V_{\updownarrow})(s) = \max_{a \in \Aspace, \leq_{opt}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V})(s) \Big]\\
+IVI_{\updownarrow \text{pes}}(V_{\updownarrow})(s) = \max_{a \in \Aspace, \leq_{pes}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V})(s) \Big]
+\end{align*}
+where $VI_{a}(v)(s) = R(s,a) + \gamma \sum_{s' \in \Sspace} P(s'|s,a)v(s')$ and $P(.|s,a)$ depends on the $M$ selected to perform $VI$.\\
+\newline
+In order to select the $M$ that minimizes (maximizes) the expression, the arriving states $s'$ are sorted into increasing (decreasing) order according to their $\underline{V}(\overline{V})$, and then the transition probability is chosen so as to send as much probability mass to the states early in the ordering without exceeding 1. Given the order of arriving states $s'_1, s'_2, ..., s'_k$, the index $r$ with $1 \leq r \leq k$ maximizes the following expression without letting it exceed 1:
+$$\sum_{i=1}^{r-1}\overline{P}(s'_i|s,a) + \sum_{i=r}^{k}\underline{P}(s'_i|s,a).$$
+The transition function is defined by assigning the upper bound to the states below $r$, the lower bound to the states above $r$ and the rest of probability to the state in index $r$.
+
+\subsection{Lipschitz MDP}
+We introduce the notion of \emph{Lipschitz continuity} to express properties of regularity in the \ac{MDP} related to some metric distances. Given two metric sets $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-Lipschitz continuous if
+\begin{align} \forall(x_1, x_2) \in X^2, d_Y(f(x_1), f(x_2)) \leq L_f d_X(x_1, x_2). \label{eq:lip} \end{align}
+The smalles $L_f$ for which~\eqref{eq:lip} holds is called the Lipschitz constant of $f$. For real-valued functions (\eg the reward function), we will use the Euclidean distance as metric for the codomain. For the state-transition model and the policies we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures $p$ and $q$:
+$$ \Kant(p, q) = \sup_f\Big\{ \Big| \int_x f d(p-q) \Big|: L_f \leq 1 \Big\}.$$
+In this work, we restrict our attention to Lipschitz-continuous MDPs and policies. We make similar assumptions as in~\citep{pirotta2015policy}. For the MDP, we require both the continuity of the transition model and the reward:
+%
+\begin{assumption}[Lipschitz MDP]\label{ass:lipmdp}
+	For all $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
+	\begin{align}
+	&\Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},\wt{a})\right) \leq L_{P}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right), \\
+	&\left|R(s,a) - R(\wt{s},\wt{a})\right| \leq L_{R}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
+	\end{align}
+	for some positive real constants $L_{P}$ and $L_{R}$.
+\end{assumption}
+%
+where $\Kant(\cdot,\cdot)$ denotes the Kantorovich (or $1$-Wasserstein) distance between probability distributions and $d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right) = \norm{s-\wt{s}} + \norm{a-\wt{a}}$ is the taxicab norm on $\Sspace\times\Aspace$.
+We also require our deterministic policy to be continuous both \wrt the input state and its parameters:
+%
+\begin{assumption}[Lipschitz Policies]\label{ass:lippol}
+	For all $s,\wt{s}\in\Sspace$ and $\vtheta,\wt{\vtheta}\in\Theta$:
+	\begin{align}
+	&\norm{\pi_{\vtheta}(s) - \pi_{\vtheta}(\wt{s})} \leq L_{\pi_{\vtheta}}\norm{s-\wt{s}}, \\
+	&\norm{\pi_{\vtheta}(s) - \pi_{\wt\vtheta}(s)} \leq L_{\Theta}\norm{\vtheta-\wt{\vtheta}},
+	\end{align}
+	for some positive real constants $\{L_{\pi_{\vtheta}}\}_{\vtheta\in\Theta}$ and $L_{\Theta}$.
+\end{assumption}
+%
+We use the euclidean norm to measure distances on $\Sspace$, $\Aspace$ and $\Theta$, but everything works for general metrics.
+In the following, we will always assume that ${L_{P}(1+L_{\pi_{\vtheta}}) < \gamma^{-1}}$.
+These assumptions are enough to guarantee the continuity of the value functions \wrt states and actions:
+%
+\begin{lemma}[\citet{rachelson2010locality}]\label{lem:lipval}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $s,\wt{s}\in\Sspace$, $a,\wt{a}\in\Aspace$ and $\vtheta\in\Theta$:
+	\begin{align}
+	&\left|V^{\vtheta}(s) - V^{\vtheta}(\wt{s})\right| \leq L_{V^{\vtheta}}\norm{s-\wt{s}}, \\
+	&\left|Q^{\vtheta}(s,a) - Q^{\vtheta}(\wt{s},\wt{a})\right| \leq L_{Q^{\vtheta}}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
+	\end{align}
+	where $L_{Q^{\vtheta}} = \frac{L_{R}}{1-\gamma L_{P}(1+L_{\pi_{\vtheta}})}$ and $L_{V^{\vtheta}} = L_{Q^{\vtheta}}(1+L_{\pi_{\vtheta}})$.
+\end{lemma}
+%
+and also of the future-state distributions \wrt policy parameters:
+%
+\begin{lemma}[\citet{pirotta2015policy}]\label{lem:lipfut}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta,\wt\vtheta\in\Theta$:
+	\begin{align}
+	&\Kant\left(\delta^{\vtheta},\delta^{\wt{\vtheta}}\right) \leq L_{\delta^{\vtheta}}\norm{\vtheta-\wt{\vtheta}},
+	\end{align}
+	where $L_{\delta^{\vtheta}} = {\gamma L_{P}L_{\pi_{\vtheta}}}\big/{\left(1-\gamma L_{P}(1+L_{\pi_{\vtheta}})\right)}$.
+\end{lemma}
+
+\section{Policy Search}\label{sec:polser}
+In policy search the problem of computing a value function for each state is avoided . The optimal policy is directly searched in the set of possible policies, that depends on the parametrization.\\
+\newline
+In this work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^m$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The goal of policy optimization is to find $\vtheta^{*}\in\arg\max_{\vtheta\in\Theta}J({\vtheta})$.
+The simplest way of parametrizing $\pi_{\vtheta}$ is by means of a linear mapping. The linear policy is defined as $\pi_{\vtheta}(s) = \vtheta^T\vphi(s)$, where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of radial basis functions (RBF). An example of RBF is the Gaussian $\phi_i(s; \mu_i, \sigma_i) = \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}$, where $\mu_i$ and $\sigma_i$ are hyperparameters, $i=1,\dots,m$. More complex policy parametrizations include deep neural networks~\citep{duan2016benchmarking}. 
+Stochastic policies randomize over actions. In continuous settings, this is typically done by adding a Gaussian noise, \eg for a linear policy $a\sim\mathcal{N}(\vtheta^T\vphi(s),\Sigma)$, where $\Sigma\in\Reals^{D\times D}$ is a covariance matrix.
+
+\subsection{Policy Gradient}
+The most important algorithms in policy search are the ones that learn the policy parameters based on the gradient of some scalar performance measure $J(\theta)$, with $\theta \in \mathbb{R}^d$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
+$$ \theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)},$$
+where $\widehat{\nabla J(\theta)} \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size. Some methods also learn approximation to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function.\\
+\newline
+In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\forall s \in \Sspace, a \in \Aspace, \theta \in \mathbb{R}^d$.
+
+\subsection{Policy Gradient Theorem}
+
+\subsection{Algorithms}
+\subsubsection{REINFORCE}
+\subsubsection{PGPE}
+\subsubsection{DDPG}
+
+\section{Safe Reinforcement Learning}
+
+\section{State discretization}

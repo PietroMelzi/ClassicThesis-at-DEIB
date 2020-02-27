@@ -34,7 +34,6 @@
 %    * Use tables as in the examples
 %    * See classicthesis-preamble.sty for useful commands
 % ****************************************************************
-
 \documentclass[ twoside, 
 			openright,
 			% letterpaper a4paper
@@ -52,7 +51,10 @@
 %*****************************************************************
 % Note: Make all your adjustments in here
 %*****************************************************************
-
+\usepackage{mymacros}
+%Theorems
+\usepackage{amsthm,thmtools,thm-restate}
+\newtheorem{assumption}{Assumption}
 % \usepackage[backref, backend=biber]{biblatex}
 \usepackage[backref,
 		backend=bibtex,
@@ -62,11 +64,12 @@
             	style=authoryear-comp,
             	sortcites=false,
             	doi=false,
-            	url=false]{biblatex}
+            	url=false]{biblatex}           	
 \bibliography{Bibliography}	
 
 \input{classicthesis-config}
 
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes} 
 %*****************************************************************
 % Hyphenation
 %*****************************************************************
@@ -114,6 +117,7 @@
 
 	\include{Chapters/Introduction_Writing}
 	\include{Chapters/Technicalities} 
+	\include{Chapters/State_of_the_Art}
 	
 	% ************************************************************
 	% Backmatter
