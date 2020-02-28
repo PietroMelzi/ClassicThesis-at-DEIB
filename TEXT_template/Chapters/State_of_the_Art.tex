@@ -159,17 +159,73 @@ Stochastic policies randomize over actions. In continuous settings, this is typi
 
 \subsection{Policy Gradient}
 The most important algorithms in policy search are the ones that learn the policy parameters based on the gradient of some scalar performance measure $J(\theta)$, with $\theta \in \mathbb{R}^d$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
-$$ \theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)},$$
+\begin{align}
+\theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)}, \label{eq:grad}
+\end{align}
 where $\widehat{\nabla J(\theta)} \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size. Some methods also learn approximation to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function.\\
 \newline
 In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\forall s \in \Sspace, a \in \Aspace, \theta \in \mathbb{R}^d$.
 
 \subsection{Policy Gradient Theorem}
+With continuous policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas in $\epsilon$-greedy selction the action probabilities may change dramatically for an arbitrary small change in the estimated action values, if that change results in a different action having the maximal value.
+\todo{parlare (prima) di algoritmi con value function}
+Stronger convergence guarantees are available for policy-gradient methods than for action-value methods. In particular, the continuity of the policy dependence on the parameters enables policy-gradient methods to approximate gradient ascent.\\
+\newline
+The problem is that the performance depends on both the action selections and the distribution of states in which those selctions are made, and both of these are affected by the policy parameter. The effect of the policy on the state distribution is a function of the environment, typically unknown. Fortunately, there is an excellent theoretical answer to this challenge in the form of the \emph{policy gradient theorem}, which provides an analytic expression for $\nabla_{\theta}J(\theta)$ that does not involve the derivative of the state distribution.\\
+\newline
+The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the continuous case:
+\begin{align}
+\nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) Q^{\theta}(s,a) \de a \de s. \label{eq:pgt}
+\end{align}
+We can estimate the gradient from samples collected following the policy $\pi_{\theta}$ and using the estimated value in the formula~\eqref{eq:grad}.
 
 \subsection{Algorithms}
+In this section we present some important algorithms and we show their property that are interesting to compare these existing algorithms with our work.
 \subsubsection{REINFORCE}
+According to [\citet{Williams1992SimpleSG}] it is possible to estimate the gradient from a single trajectory: we replace in~\eqref{eq:pgt} the integral over $a$ with an expectation under $\pi$, and then sampling the expectation:
+\begin{align}
+	\nabla_{\theta}J(\theta) &= \int_s \delta^{\theta}(s) \int_a \pi(a|s) \frac{\nabla_{\theta} \pi(a|s)}{\pi(a|s)} Q^{\theta}(s,a) \de a \de s \nonumber\\
+	&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)} Q^{\theta}(s_t,a_t) \Big] \nonumber\\
+	&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \nabla_{\theta} \log\pi(a_t|s_t) r_t(s_t, a_t) \Big] \label{eq:rein}
+\end{align}
+where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi(a_t|s_t) = \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)}$ and $r_t(s_t, a_t) = \sum_{j = t}^T \gamma^{j-t} R(s_j, a_j)$.\\
+\newline
+From~\eqref{eq:pgt} we observe that if $b(s)$ does not depend on $a$ we can write:
+$$ \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) -b(s) \Big) \de a \de s. $$
+Indeed: $\int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0.$
+$b(s)$ is called baseline and allows to reduce the variance of the estimate, that considerably slow the convergence of the algorithm.
+\todo{spiegare come vengono considerate somme/medie degli step della traiettoria}
+A common baseline used is:
+$$ b_k^h = \frac{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2r_k \Big\rangle}{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2\Big \rangle}
+$$
+and $Q^{\theta}(s,a)$ is replaced with:
+$$ g_h = \Big\langle \sum_{l=0}^{H} \Big( \sum_{k=0}^{l} \nabla_{\theta} \log \pi^{\theta}(a_k|s_k)\Big)(r_l - b_l^h)\Big\rangle.
+$$
+This is one of the most common policy gradient algorithms and we use it in our work to set a comparison with a state of the art algorithm in policy search.
+
 \subsubsection{PGPE}
-\subsubsection{DDPG}
+\todo{spiegare (anche prima) likelihood gradient}
+\acf{PGPE}[\citet{inproceedings}] estimates a likelihood gradient by sampling directly in parameter space, which reduces the variance of estimates compared to REINFORCE. This is due to the fact that once parameters are sampled, we can generate an entire action-state history (trajectory) while in REINFORCE we draw the action from the policy at each time step.\\
+\newline
+Indeed, we replace the stochastic policy with a probability distribution over the parameter themselves:
+$$ \pi^{\theta}(a|s) = \int_{\Theta} p(\theta) \delta_{\mu^{\theta}(s)}\de \theta,
+$$
+where $\delta_{\mu^{\theta}(s)}$ is the Dirac delta function of a deterministic policy $\mu^{\theta}$ depending on parameter $\theta$ weighted for a distribution $p(\theta)$.
+
+
+\subsubsection{DPG}
+\acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
+\newline
+Policy gradient algorithms are perhaps the most popular class of continuous action reinforcement learning algorithms, starting from the results obtained by the \emph{policy gradient theorem}, we consider a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[r(s, \mu_{\theta}(s))]$. 
+By applying the chain rule we see that the policy improvement may be decomposed:
+$$
+\nabla_{\theta} Q^{\mu}(s, \mu_{\theta}(s)) = \nabla_{\theta}\mu_{\theta}(s)\nabla_a Q^{\mu}(s, a)|_{a=\mu_{\theta}(s)}
+$$
+Suppose that $\nabla_{\theta}\mu_{\theta}(s)$ and $\nabla_aQ^{\mu}(s,a)$ exist, then:
+$$
+\nabla_{\theta}J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}} [\nabla_{\theta} \mu_{\theta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\theta} (s)}]
+$$
+We use the deterministic policy gradient theorem to derive an off-policy actor-critic algorithm. It learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q^{\mu}(s,a)$. 
 
 \section{Safe Reinforcement Learning}
 
