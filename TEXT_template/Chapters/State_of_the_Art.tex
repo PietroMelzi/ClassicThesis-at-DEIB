@@ -9,7 +9,7 @@ According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do s
 \newline
 % MDP
 We define the \ac{MDP} according to~\citep[]{puterman2014markov}. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on the solution of continuous \ac{MDPs} as these are the most suitable for modeling continuous control problems.
-\begin{definition}\label{def:mdp}
+\begin{definition}[MDP]\label{def:mdp}
 The \ac{MDP} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
 \begin{itemize}
 	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
@@ -25,7 +25,7 @@ The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the
 The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policy are given later, in \mySubsec{subsec:solv} and \mySec{sec:ps}.\\
 The sum of rewards obtained if we consider time steps from $k=t$ to a certain $k=T$ is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
 \todo{Uso G come nome?}
-$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, $$where $r_k$ is the reward obtained at step $k$. The last time step $T$ represents the horizon of the task and can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuous} and a discount factor $\gamma<1$ is required in order to obtain a finite value for return $G_t$.\\
+$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, $$where $r_k$ is the reward obtained at step $k$. The last time step $T$ represents the horizon of the task and can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuing} and a discount factor $\gamma<1$ is required in order to obtain a finite value for return $G_t$.\\
 \newline
 In this work, we denote with $\pi(a|s)$ the probability of performing the action $a$ in the state $s$, according to the policy $\pi$. Since $\pi(s)$ is a distribution of probability, the following equality holds:
 $$\sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace.$$
@@ -46,78 +46,96 @@ The performance measure can be used to identify the optimal policy that we want 
 $$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
 
 \subsection{Solving a \ac{RL} task}\label{subsec:solv}
-Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}. They are a subset of the \ac{MDPs} defined in \ref{def:mdp}. In finite \ac{MDPs}, $\Sspace$ and $\Aspace$ are finite sets of discrete values and the expressions reported so far for continuous \ac{MDPs} can be used for finite \ac{MDPs} if we replace integrals with summations.\\
+Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}. They are a subset of the \ac{MDPs} defined in \ref{def:mdp}. In finite \ac{MDPs}, $\Sspace$ and $\Aspace$ are finite sets of discrete values and the expressions reported so far can be used for finite \ac{MDPs} if we replace integrals with summations.\\
 Policies can be partially ordered according to their value function: 
-$$\pi \geq \pi' \iff V^{\pi}(s) \geq V^{\pi'}(s) \forall s \in \Sspace.$$ 
+\begin{align}
+\pi' \geq \pi \iff V^{\pi'}(s) \geq V^{\pi}(s) \forall s \in \Sspace. \label{eq:ordpol}
+\end{align} 
 In finite \ac{MDPs} there always exists a deterministic optimal policy $\pi^{*}$. The value function $V^{*}$ computed according to $\pi^{*}$ has the following property:
 $$ V^{*}(s) = \max_{\pi}V^{\pi}(s) \quad \forall s \in \Sspace.$$
 Optimal functions can be written with the Bellman optimality equations:
 \begin{align*}
-V^{*}(s) &= \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V^{*}(s') \Big)\\
-Q^{*}(s,a) &= \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma \max_{a'} Q^{*}(s', a') \Big).
+V^{*}(s) &= \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)   V^{*}(s') \Big)\\
+Q^{*}(s,a) &= R(s,a) + \gamma \sum_{s'}P(s'|s,a) \max_{a'} Q^{*}(s', a').
 \end{align*}
-If we have a \emph{complete knowledge} of the environment, \ie the agent has a model of transition and reward functions of the \ac{MDP}, we can use dynamic programming to solve the \ac{RL} problem (\mySubsec{subsec:dp}). Instead, in the case of \emph{incomplete knowledge} the unknown functions can be estimated an the problem is similarly solved (\mySubsec{subsec:alt}). All of these algorithms are called \emph{tabular} because the state and action spaces are small enough for the value functions to be represented in a tabular format. In larger problems, we can use function approximators instead of value functions or directly search the optimal policy in the policy space, without using any value function (\mySec{sec:ps}).
+If we have a \emph{complete knowledge} of the environment, \ie the agent has a model of transition and reward functions of the \ac{MDP}, we can use \acf{DP} to solve the \ac{RL} problem (\mySubsec{subsec:dp}).\\
+Instead, in the case of \emph{incomplete knowledge} the unknown functions can be estimated from experience (\mySubsec{subsec:alt}).\\
+\newline
+These algorithms are called \emph{tabular} because the state and action spaces are small enough for the value functions to be represented in a tabular format. When the problems involve larger finite \ac{MDPs} or continuous \ac{MDPs}, we have two possibilities: replace the exact value functions with \emph{function approximators} or search the optimal policy in the policy space, it doesn't require to compute any value function (\mySec{sec:ps}).
 
 \subsection{Dynamic Programming}\label{subsec:dp}
-\acf{DP} is a collection of algorithms used to compute optimal policies given a knowledge on the environment. It is generally applied to discrete \ac{MDP}s because \ac{DP} is computational expensive and requires that the $P$ and $R$ functions of the \ac{MDP} are known.\\
+\acf{DP} is a collection of algorithms that can be used to compute optimal policies, given a model of the environment in the form of \ac{MDP}. Since \ac{DP} is computationaly expensive and requires finite \ac{MDP}s, its utility in solving \ac{RL} problems is limited. However \ac{DP} provides strong foundation for understanding the following methods.\\
 \newline
-There are two possibilities to obtain the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
+\ac{DP} offers two possibilities to compute the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
 
 \subsubsection{Policy Iteration}
-Policy iteration starts from an initial policy $\pi_0$ and then alternates two phases of the algorithm: \emph{policy evaluation} and \emph{policy iprovement}. The idea is to obtain $V_{*}$ through the sequence:
-$$ \pi_{0} \xrightarrow{\text{E}} V_{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V_{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V_{*}.
+In policy iteration, two consecutive operations are performed on a policy $\pi$ in order to obtain a policy $\pi'$ that is better according to the ordering rule in~\eqref{eq:ordpol}. These operations are called \emph{policy evaluation} and \emph{policy improvement} and the goal of the algorithm is to obtain the optimal value function $V^{*}$ through the sequence:
+$$ \pi_{0} \xrightarrow{\text{E}} V^{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V^{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V^{*}.
 $$
-The first phase consists in compute the value function for every state, given the current policy $\pi$. In the second phase the policy is updated according to the new values of the value function.
-In policy evaluation the value function is computed for every state as:
+Policy evaluation consists in computing the value function $V^{\pi}$ for every state $s \in \Sspace$, according to the current policy $\pi$, by iteratively applying the following update rule:
 $$
-V(s) = \sum_{s'}P(s'|s,\pi(s)) \Big( R(s,\pi(s)) + \gamma V(s') \Big),
+V_{k+1}(s) = \sum_{a}\pi(a|s) \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a) V_{k}(s') \Big),
 $$
-until each $V(s)$ converges. Then, for each state the policy is computed according to the following rule:
-$$ \pi(s) = \arg \max_{a} \sum_{s'} P(s'|s,a) \Big( R(s,a) + \gamma V(s') \Big).$$
-\subsubsection{Value Iteration}
-The main drawback in policy iteration is that, for each policy evaluation, multiple iterations are required. If we assume to truncate the policy evaluation after just one update for each state we obtain a special case of policy iteration, called value iteration. In value iteration, the value function at each step is updated as follows:
-$$ V_{k+1}(s) = \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V_{k}(s') \Big),
+until $V_{k}$ converges to $V^{\pi}$. The existence of $V^{\pi}$ is guaranteed as long as $\gamma < 1$. \todo{cit smth related to the convergence?} \\
+\newline
+Policy improvement consists in updating the policy $\pi$ in a new deterministic policy $\pi'$, according to the value function $V^{\pi}$ computed in the previous policy evaluation. For each state $s \in \Sspace$, the policy $\pi'$ is computed according to the following rule:
+\begin{align} 
+\pi'(s) = \arg \max_{a} \Big( R(s,a) + \gamma \sum_{s'} P(s'|s,a)  V^{\pi}(s') \Big). \label{eq:polimp}
+\end{align}
+When $\pi'$ is as good as $\pi$ (\ie $V^{\pi} = V^{\pi'}$), the algorithm terminates. The policy $\pi$ is considered to be optimal.
+\subsubsection{Value Iteration} \label{subsec:vi}
+The main drawback in policy iteration is that, for each policy evaluation performed, multiple iterations are required. If we assume to truncate the policy evaluation after just one application of the update rule, we obtain the value iteration. In value iteration, the value function at each step is updated for all $s \in \Sspace$ as follows:
+$$ V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big).
 $$
-for all $s \in \Sspace$. The sequence ${v_{k}}$ can be shown to converge to $V_{*}$ under the same conditions that guarantee the existence of $V_{*}$.
-\subsubsection{Limit of $\ac{DP}$}
-If the state space is very large,  than even a single update of $V(s) \forall s \in \Sspace$ can be prohibitively expensive. Furthemore, \ac{DP} requires a complete knowledge on the \ac{MDP} that is not always possible. In continuous \ac{MDP}s the methods presented above are not feasible. A solution is \emph{policy serach}, presented in \mySec{sec:polser}.
+Differently from policy iteration, we don't consider any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions computed converges to $V^{*}$ \todo{cit smth related to the convergence?} and the optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp} with $V^{*}$ instead of $V^{\pi}$.
 
 \subsection{Alternatives to \ac{DP}}\label{subsec:alt}
+If we don't have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the interaction agent-environment at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. We don't detail these algorithms since they are not involved in our work.
 
-\subsection{Bounded MDP}
-A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one. A BMDP $M_{\updownarrow} = \langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$ defines a set of exact MDPs. For any exact MDP $M = \langle \Sspace', \Aspace', P', R', \gamma' \rangle$, we have $M \in M_{\updownarrow}$ if $\Sspace = \Sspace', \Aspace = \Aspace', \gamma = \gamma'$, and for any action $a$ and states $s, s', R'(s,a)$ belongs to the interval $R_{\updownarrow}(s,a)$ and $P'(s'|s,a)$ belongs to the interval $P_{\updownarrow}(s'|s,a)$. An interval value function $V_{\updownarrow}$ is a mapping from states to closed real intervals. We use such functions to indicate that the value of a given state for any exact MDP falls within the selected interval. As in the case of (exact) value functions, interval value functions are specified \wrt a fixed policy $\pi$, \ie:
-$$V_{\updownarrow, \pi}(s) = \Big[ \underline{V_{\pi}}(s), \overline{V_{\pi}}(s)\Big] = \Big[ \min_{M \in M_{\updownarrow}} V_{M,\pi}(s), \max_{M \in M_{\updownarrow}} V_{M,\pi}(s)\Big].$$
-According to ~\citep{givan2000bounded}, there exists in $M_{\updownarrow}$ an \ac{MDP} that simultaneously achieves $\underline{V_{\pi}}(s) \forall s$ and another one that achieves $\overline{V_{\pi}}(s) \forall s$.\\
+\subsection{Bounded \ac{MDPs}}
+A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values: given a lower bound $\underline{P}$ and an upper bound $\overline{P}$, $P_{\updownarrow} = [\underline{P}; \overline{P}]$. Similarly we can specify the interval $R_{\updownarrow}$. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one.\\
 \newline
-In order to define an optimal value function for a \ac{BMDP} we have to clarify the ordering between intervals. There are two possibilities:
-\begin{align*}
+A BMDP $M_{\updownarrow} = \langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$ defines a set of exact MDPs. For any exact MDP $M = \langle \Sspace', \Aspace', P', R', \gamma' \rangle$, we have $M \in M_{\updownarrow}$ if $\Sspace = \Sspace', \Aspace = \Aspace', \gamma = \gamma'$, and for any action $a$ and states $s, s', R'(s,a)$ belongs to the interval $R_{\updownarrow}(s,a)$ and $P'(s'|s,a)$ belongs to the interval $P_{\updownarrow}(s'|s,a)$. An interval value function $V_{\updownarrow}$ is a mapping from states to closed real intervals. We use such functions to indicate that the value of a given state for any exact MDP falls within the selected interval. As in the case of (exact) value functions, interval value functions are specified \wrt a fixed policy $\pi$, \ie:
+$$V_{\updownarrow, \pi}(s) = \Big[ \underline{V}_{\pi}(s), \overline{V}_{\pi}(s)\Big] = \Big[ \min_{M \in M_{\updownarrow}} V_{M,\pi}(s), \max_{M \in M_{\updownarrow}} V_{M,\pi}(s)\Big].$$
+According to~\citep{givan2000bounded}, there exists in $M_{\updownarrow}$ an \ac{MDP} that simultaneously achieves $\underline{V}_{\pi}(s)$ for all $s \in \Sspace$ and another one that achieves $\overline{V}_{\pi}(s)$ for all $s \in \Sspace$.\\
+\newline
+The notion of optimal value function in \ac{BMDP}s requires an ordering rule for intervals. We can define two different possible orderings:
+\begin{align}
 [l_1, u_1] \leq_{pes} [l_2, u_2] &\Leftrightarrow 
 \begin{cases}
 l_1 < l_2 \text{, or }\\
 l_1 = l_2 \text{ and } u_1 \leq u_2
-\end{cases}\\
+\end{cases} \label{eq:pes}\\
 [l_1, u_1] \leq_{opt} [l_2, u_2] &\Leftrightarrow 
 \begin{cases}
 u_1 < u_2 \text{, or }\\
 u_1 = u_2 \text{ and } l_1 \leq l_2
-\end{cases}
-\end{align*}
-We extend these orderings to interval value functions by relating two value functions $V_{1 \updownarrow} \leq V_{2 \updownarrow}$ only when $V_{1 \updownarrow}(s) \leq V_{2 \updownarrow}(s)$ for every state $s$.
-There exists at least one optimistically and one pessimistically optimal policy:
-\begin{align*}
-V_{\updownarrow \text{opt}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{opt} \text{ to order interval value functions}\\
-V_{\updownarrow \text{pes}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{pes} \text{ to order interval value functions}
-\end{align*}
-Now we can modify the value iteraion so that it computes optimal policy value intervals:
-\begin{align*}
-IVI_{\updownarrow \text{opt}}(V_{\updownarrow})(s) = \max_{a \in \Aspace, \leq_{opt}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V})(s) \Big]\\
-IVI_{\updownarrow \text{pes}}(V_{\updownarrow})(s) = \max_{a \in \Aspace, \leq_{pes}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V})(s) \Big]
-\end{align*}
-where $VI_{a}(v)(s) = R(s,a) + \gamma \sum_{s' \in \Sspace} P(s'|s,a)v(s')$ and $P(.|s,a)$ depends on the $M$ selected to perform $VI$.\\
+\end{cases} \label{eq:opt}
+\end{align}
+We use these orderings rules to partially order interval value functions in the following way:
+$$V_{1 \updownarrow} \leq V_{2 \updownarrow} \iff V_{1 \updownarrow}(s) \leq_{*} V_{2 \updownarrow}(s) \quad \forall s \in \Sspace,$$
+with $\leq_{*}$ defined as $\leq_{pes}$ in~\eqref{eq:pes} or $\leq_{opt}$ in~\eqref{eq:opt}.\\
 \newline
-In order to select the $M$ that minimizes (maximizes) the expression, the arriving states $s'$ are sorted into increasing (decreasing) order according to their $\underline{V}(\overline{V})$, and then the transition probability is chosen so as to send as much probability mass to the states early in the ordering without exceeding 1. Given the order of arriving states $s'_1, s'_2, ..., s'_k$, the index $r$ with $1 \leq r \leq k$ maximizes the following expression without letting it exceed 1:
+As stated in~\citep{givan2000bounded}, there exists at least one optimistically and one pessimistically optimal policy:
+\begin{align*}
+V^{*}_{\updownarrow \text{opt}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{opt} \text{ to order interval value functions,}\\
+V^{*}_{\updownarrow \text{pes}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{pes} \text{ to order interval value functions.}
+\end{align*}
+In order to better understand the meaning of the optimal policies, we consider a game in which we choose a policy $\pi$ and then a second player chooses an \ac{MDP} $M \in M_{\updownarrow}$ to evaluate the policy. $\overline{V}^{*}_{opt}$ is the best value function we can obtain if the second player cooperates in the game, $\underline{V}^{*}_{pes}$ is the best value function obtainable if the second player is an adversary.\\
+\newline
+We define the \acf{IVI} algorithm to compute optimal policy value intervals in a similar way to the standard value iteration presented in \mySubsec{subsec:vi}. In \ac{IVI} the updating rule is:
+\begin{align}
+V_{\updownarrow, k+1}(s) = \max_{a \in \Aspace, \leq_{*}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V}_{k})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V}_{k})(s) \Big]. \label{eq:ivi}
+\end{align}
+$\leq_{*}$ can be $\leq_{pes}$ or $\leq_{opt}$. Given an \ac{MDP} $M$ with transition function $P$ and reward function $R$, an action $a \in \Aspace$ and a value function $v$, $VI_{M, a}(v)(s)$ is a single iteration of policy evaluation, where the action is fixed and 
+\begin{align} 
+VI_{M, a}(v)(s) = R(s,a) + \gamma \sum_{s' \in \Sspace} P(s'|s,a)v(s'). \label{eq:vi}
+\end{align}
+In~\eqref{eq:ivi} it is required to perform two iterations VI. The two value functions used to perform the iterations (\ie the functions used instead of $v$ in~\eqref{eq:vi}) are obtained from the interval value function $V_{\updownarrow, k}$. For the first iteration, $v = \underline{V}_{k}$, with $\underline{V}_{k}$ the lower bounds in $V_{\updownarrow, k}$; for the second one $v = \overline{V}_{k}$ with $\overline{V}_{k}$ the upper bounds in $V_{\updownarrow, k}$.\\
+\newline
+We can select the \ac{MDP} $M$ that minimizes (maximizes) the expressions under $\min (\max)$ operator in~\eqref{eq:ivi} by computing an exact transition function $P$ from the interval transition function $P_{\updownarrow}$ of $M_{\updownarrow}$. In order to do that, the arriving states $s' \in \Sspace$ are sorted in increasing (decreasing) order according to their $\underline{V}(\overline{V})$. Then, for all the state-action pairs $(s,a) \in \Sspace \times \Aspace$ and given an order of arriving states $s'_1, s'_2, ..., s'_k$, we calculate the index $r$, with $1 \leq r \leq k$, that maximizes the following expression without letting it exceed 1:
 $$\sum_{i=1}^{r-1}\overline{P}(s'_i|s,a) + \sum_{i=r}^{k}\underline{P}(s'_i|s,a).$$
-The transition function is defined by assigning the upper bound to the states below $r$, the lower bound to the states above $r$ and the rest of probability to the state in index $r$.
+The exact transition function $P(.|s,a)$ is defined by assigning the upper bound $\overline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index lower than $r$, the lower bound $\underline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index greater than $r$ and the probability that ensures $\sum_{s' \in \Sspace}P(s'|s,a) = 1$ to the state with index $r$.
 
 \subsection{Lipschitz MDP}
 We introduce the notion of \emph{Lipschitz continuity} to express properties of regularity in the \ac{MDP} related to some metric distances. Given two metric sets $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-Lipschitz continuous if
