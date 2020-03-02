@@ -5,44 +5,62 @@
 According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with ideas coming from dynamical systems theory, specifically with the \acf{MDP} that we detail in \mySubsec{subsec:mdp}. One of the challenges that arise in \ac{RL} is the trade-off between exploration and exploitation. To obtain an high reward, an agent must perform actions that it has found to be effective in producing reward. But to discover such actions, it has to try actions that it has not selected before.
 
 \subsection{Markov Decision Processes}\label{subsec:mdp}
-\ac{MDP}s are a formalization of sequential decision making, where actions influence immediate and future rewards. The learner and decision maker is called \emph{agent}, it interacts with the \emph{environment} by selecting the actions and receiving rewards and information on the new situation. The agent seeks to maximize rewards over time through its choice of actions. More specifically, at each time step $t$, the agent receives some representation of the environment's state $s_t \in \Sspace$, and on that basis select an action $a_t \in \Aspace(s)$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $S_{t+1}$.\\
+\acf{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time. More specifically, at each time step $t$, the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$.\\
 \newline
 % MDP
-An \ac{MDP}~\citep[]{puterman2014markov} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
+We define the \ac{MDP} according to~\citep[]{puterman2014markov}. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on the solution of continuous \ac{MDPs} as these are the most suitable for modeling continuous control problems.
+\begin{definition}\label{def:mdp}
+The \ac{MDP} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
 \begin{itemize}
-	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$;
-	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$;
-	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$;
-	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$;
-	\item $\gamma \in [0, 1)$ is the discount factor.
+	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
+	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$.
+	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$. For any state-action pair $(s,a)$, it holds the following equality:
+	$$ \sum_{s' \in \Sspace} P(s'|s,a) = 1.$$
+	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$.
+	\item $\gamma \in [0, 1)$ is the discount factor, eventually used to discount the present effect of future rewards.
 \end{itemize}
-State and action spaces can be finite or continuous sets. We focus on the solution of continuous \ac{MDP}s as these are the most suitable for modeling continuous control problems.
-The dynamics of the \ac{MDP}s are defined by the function $P$ and ensure the \emph{Markov property}: the probability of each possible value for $s_t$ depends only on the immediately preciding state and action, $s_{t-1}$ and $a_{t-1}$ and not on earlier states and actions.\\
+\end{definition}
+The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.
+\subsubsection{Policy and Value Functions}
+The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policy are given later, in \mySubsec{subsec:solv} and \mySec{sec:ps}.\\
+The sum of rewards obtained if we consider time steps from $k=t$ to a certain $k=T$ is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
+\todo{Uso G come nome?}
+$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, $$where $r_k$ is the reward obtained at step $k$. The last time step $T$ represents the horizon of the task and can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuous} and a discount factor $\gamma<1$ is required in order to obtain a finite value for return $G_t$.\\
 \newline
-The behaviour of the agent is modeled with a policy $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a possibly stochastic mapping from states to actions. The agent's goal is to maximize the cumulative reward it receives through the time steps. The agent learns the policy according to its goal. In the simplest case the return is the sum of the rewards obtained in subsequent time step, until the final time stp $T$. If the episode has not a finite horizon (\ie $T = \infty$) we have to consider the discount factor $\gamma$ when we define the return. The return, or sum of discounted rewards, from time $t=0$ to $t=T$ for a horizon $T$ is:
-$$r = \sum_{t=0}^{T} \gamma^t r_t, $$where $r_t$ is the reward obtained at step $t$.\\
+In this work, we denote with $\pi(a|s)$ the probability of performing the action $a$ in the state $s$, according to the policy $\pi$. Since $\pi(s)$ is a distribution of probability, the following equality holds:
+$$\sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace.$$
+If, for each state $s \in \Sspace$, there exists an action $a$ such that $\pi(a|s) = 1$, the policy is deterministic.\\
 \newline
-An important function in \ac{RL} is the Value function, that estimates how good it is for the agent to be in a given state, where the notion of "how good" is defined in terms of expected return. Since the rewards the agent can expect to receive in the future depend on the taken actions, value functions are defined with respect to policies. The value $V^{\pi}(s)$ of policy $\pi$ is the expected sum of discounted rewards starting at state $s$ and following policy $\pi$. It can be defined recursively via the Bellman equation: $$V^{\pi}(s) = \int_a \pi(a|s) \Big(R(s,a) + \gamma\EV_{s'\sim p(\cdot|s,\pi(s))}[V^{\pi}(s')] \Big) \de a.$$
-The optimal policy $\pi^*$ is the policy that maximizes $V^{\pi}(s)$ for all $s \in S$. For control purposes, we can also define an action-value function: $$Q^{\pi}(s,a) = R(s,a) + \gamma\EV_{s'\sim p(\cdot|s,a)}[V^{\pi}(s')].$$
-It represents the return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. 
-In our work the $\gamma$-discounted future-state distribution assumes an important role. It is defined as:
-$$\delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P(S_t = s|S_0=s_0),$$
-where $\mu$ is the initial-state distribution. This function represents the probability of being in a certain state $s$ provided that the policy is $\pi$ and the initial state distribution is $\mu$.
-In order to evaluate a learned policy we use the performance measure:
-$${J(\pi) = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}}R(s,\pi(s))} = \EV_{s\sim\mu}V^{\pi}(s)$$
-\ie the expected reward obtained starting from a state sampled from $\mu$ and following the policy $\pi$ thereafter. We use this measure to define the policy we want to learn as:
-$$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
-An important property of the optimal policy $\pi^{*}$ is the following:
-$$ \pi^{*} \in \arg \max_{\pi} V^{\pi}(s) \forall s \in \Sspace.$$
+Given a policy $\pi$, it is possible to compute the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$, a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$ according to the expected return obtainable from that state. Since the rewards the agent can expect to receive in the future depend on the taken actions, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: $$V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a.$$
+For control purposes, we can also define an action-value function: $$Q^{\pi}(s,a) = R(s,a) + \gamma \int_{\Sspace} P(s'|s,a) \int_{\Aspace} \pi(a'|s') Q^{\pi}(s',a') \de a' \de s'.$$
+It represents the expected return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. \\
 
-\subsection{Dynamic Programming}
-\acf{DP} is a collection of algorithms used to compute optimal policies given a knowledge on the environment. It is generally applied to discrete \ac{MDP}s because \ac{DP} is computational expensive and requires that the $P$ and $R$ functions of the \ac{MDP} are known. We can obtain discrete \ac{MDP}s from the definition of continuous \ac{MDP}s if we consider finite sets for $\Sspace$ and $\Aspace$.\\
-\newline
-Optimal policies can be easily obtained once the optimal value functions are found. These optimal functions, that satisfy the Bellman optimality equations, are:
+\subsubsection{Performance Measure}
+In order to evaluate how good a policy $\pi$ is, we consider the expected reward obtained starting from a state $s \in \Sspace$ sampled from the initial-state distribution $\mu$ and following the policy $\pi$.\\
+The \emph{performance measure} $J(\pi)$ expressed in the form of an expected value is:
+$${J(\pi) = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}, a \sim \pi}R(s,a)} = \EV_{s\sim\mu}V^{\pi}(s),$$
+where $\delta^{\pi}$ is the $\gamma$-discounted future-state distribution. This function is defined as:
+$$\delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P^{\pi}(S_t = s|S_0=s_0)$$
+and represents the probability of being in a certain state $s$ during the execution of the task, provided that the policy is $\pi$ and the initial state distribution is $\mu$.\\
+The performance measure can be used to identify the optimal policy that we want to learn in the \ac{RL} problem as:
+$$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
+
+\subsection{Solving a \ac{RL} task}\label{subsec:solv}
+Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}. They are a subset of the \ac{MDPs} defined in \ref{def:mdp}. In finite \ac{MDPs}, $\Sspace$ and $\Aspace$ are finite sets of discrete values and the expressions reported so far for continuous \ac{MDPs} can be used for finite \ac{MDPs} if we replace integrals with summations.\\
+Policies can be partially ordered according to their value function: 
+$$\pi \geq \pi' \iff V^{\pi}(s) \geq V^{\pi'}(s) \forall s \in \Sspace.$$ 
+In finite \ac{MDPs} there always exists a deterministic optimal policy $\pi^{*}$. The value function $V^{*}$ computed according to $\pi^{*}$ has the following property:
+$$ V^{*}(s) = \max_{\pi}V^{\pi}(s) \quad \forall s \in \Sspace.$$
+Optimal functions can be written with the Bellman optimality equations:
 \begin{align*}
-	V_{*}(s) &= \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V_{*}(s') \Big)\\
-	Q_{*}(s,a) &= \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma \max_{a'} Q_{*}(s', a') \Big).
+V^{*}(s) &= \max_a \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma V^{*}(s') \Big)\\
+Q^{*}(s,a) &= \sum_{s'}P(s'|s,a) \Big( R(s,a) + \gamma \max_{a'} Q^{*}(s', a') \Big).
 \end{align*}
+If we have a \emph{complete knowledge} of the environment, \ie the agent has a model of transition and reward functions of the \ac{MDP}, we can use dynamic programming to solve the \ac{RL} problem (\mySubsec{subsec:dp}). Instead, in the case of \emph{incomplete knowledge} the unknown functions can be estimated an the problem is similarly solved (\mySubsec{subsec:alt}). All of these algorithms are called \emph{tabular} because the state and action spaces are small enough for the value functions to be represented in a tabular format. In larger problems, we can use function approximators instead of value functions or directly search the optimal policy in the policy space, without using any value function (\mySec{sec:ps}).
+
+\subsection{Dynamic Programming}\label{subsec:dp}
+\acf{DP} is a collection of algorithms used to compute optimal policies given a knowledge on the environment. It is generally applied to discrete \ac{MDP}s because \ac{DP} is computational expensive and requires that the $P$ and $R$ functions of the \ac{MDP} are known.\\
+\newline
 There are two possibilities to obtain the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
 
 \subsubsection{Policy Iteration}
@@ -63,6 +81,8 @@ $$
 for all $s \in \Sspace$. The sequence ${v_{k}}$ can be shown to converge to $V_{*}$ under the same conditions that guarantee the existence of $V_{*}$.
 \subsubsection{Limit of $\ac{DP}$}
 If the state space is very large,  than even a single update of $V(s) \forall s \in \Sspace$ can be prohibitively expensive. Furthemore, \ac{DP} requires a complete knowledge on the \ac{MDP} that is not always possible. In continuous \ac{MDP}s the methods presented above are not feasible. A solution is \emph{policy serach}, presented in \mySec{sec:polser}.
+
+\subsection{Alternatives to \ac{DP}}\label{subsec:alt}
 
 \subsection{Bounded MDP}
 A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one. A BMDP $M_{\updownarrow} = \langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$ defines a set of exact MDPs. For any exact MDP $M = \langle \Sspace', \Aspace', P', R', \gamma' \rangle$, we have $M \in M_{\updownarrow}$ if $\Sspace = \Sspace', \Aspace = \Aspace', \gamma = \gamma'$, and for any action $a$ and states $s, s', R'(s,a)$ belongs to the interval $R_{\updownarrow}(s,a)$ and $P'(s'|s,a)$ belongs to the interval $P_{\updownarrow}(s'|s,a)$. An interval value function $V_{\updownarrow}$ is a mapping from states to closed real intervals. We use such functions to indicate that the value of a given state for any exact MDP falls within the selected interval. As in the case of (exact) value functions, interval value functions are specified \wrt a fixed policy $\pi$, \ie:
@@ -150,7 +170,7 @@ and also of the future-state distributions \wrt policy parameters:
 	where $L_{\delta^{\vtheta}} = {\gamma L_{P}L_{\pi_{\vtheta}}}\big/{\left(1-\gamma L_{P}(1+L_{\pi_{\vtheta}})\right)}$.
 \end{lemma}
 
-\section{Policy Search}\label{sec:polser}
+\section{Policy Search}\label{sec:ps}
 In policy search the problem of computing a value function for each state is avoided . The optimal policy is directly searched in the set of possible policies, that depends on the parametrization.\\
 \newline
 In this work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^m$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The goal of policy optimization is to find $\vtheta^{*}\in\arg\max_{\vtheta\in\Theta}J({\vtheta})$.
