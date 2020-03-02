@@ -34,6 +34,7 @@ If, for each state $s \in \Sspace$, there exists an action $a$ such that $\pi(a|
 Given a policy $\pi$, it is possible to compute the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$, a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$ according to the expected return obtainable from that state. Since the rewards the agent can expect to receive in the future depend on the taken actions, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: $$V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a.$$
 For control purposes, we can also define an action-value function: $$Q^{\pi}(s,a) = R(s,a) + \gamma \int_{\Sspace} P(s'|s,a) \int_{\Aspace} \pi(a'|s') Q^{\pi}(s',a') \de a' \de s'.$$
 It represents the expected return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. \\
+Finally, we denote with $A^{\pi}(s,a) = Q^{\pi}(s,a) - V^{\pi}(s)$ the advantage function of policy $\pi$. It represents the advantage of performing action $a$ in state $s$, instead of the action prescribed by $\pi(s)$.
 
 \subsubsection{Performance Measure}
 In order to evaluate how good a policy $\pi$ is, we consider the expected reward obtained starting from a state $s \in \Sspace$ sampled from the initial-state distribution $\mu$ and following the policy $\pi$.\\
@@ -137,11 +138,17 @@ We can select the \ac{MDP} $M$ that minimizes (maximizes) the expressions under 
 $$\sum_{i=1}^{r-1}\overline{P}(s'_i|s,a) + \sum_{i=r}^{k}\underline{P}(s'_i|s,a).$$
 The exact transition function $P(.|s,a)$ is defined by assigning the upper bound $\overline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index lower than $r$, the lower bound $\underline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index greater than $r$ and the probability that ensures $\sum_{s' \in \Sspace}P(s'|s,a) = 1$ to the state with index $r$.
 
-\subsection{Lipschitz MDP}
-We introduce the notion of \emph{Lipschitz continuity} to express properties of regularity in the \ac{MDP} related to some metric distances. Given two metric sets $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-Lipschitz continuous if
+\subsection{Lipschitz \ac{MDPs}}
+We introduce the notion of \emph{Lipschitz continuity} in order to define some properties of regularity in the \ac{MDP}. These properties can be exploited in policy gradient algorithms, in (\citet{pirotta2015policy}) is shown how they can ensure a performance improvement at each iteration of policy-parameter updates. In this section we provide basic concepts related to Lipschitz continuity and useful bounds that will be exploited in our work.
+\begin{definition}[Lipschitz continuity]
+Given two metric sets $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-\acf{LC} if
 \begin{align} \forall(x_1, x_2) \in X^2, d_Y(f(x_1), f(x_2)) \leq L_f d_X(x_1, x_2). \label{eq:lip} \end{align}
-The smalles $L_f$ for which~\eqref{eq:lip} holds is called the Lipschitz constant of $f$. For real-valued functions (\eg the reward function), we will use the Euclidean distance as metric for the codomain. For the state-transition model and the policies we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures $p$ and $q$:
-$$ \Kant(p, q) = \sup_f\Big\{ \Big| \int_x f d(p-q) \Big|: L_f \leq 1 \Big\}.$$
+\end{definition}
+The smallest $L_f$ for which~\eqref{eq:lip} holds is called the Lipschitz constant of $f$. For real-valued functions (\eg the reward function $R$), we use the Euclidean distance as metric for the codomain distance. For the transition function $P$ and the policies $\pi$ we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures, defined as follows.
+\begin{definition}[Kantorovich metric]
+Given two probability measures $p$ and $q$, the Kantorvich measure $\Kant(p, q)$ is:
+$$ \Kant(p, q) = \sup_f\Big\{ \Big| \int_x f(x) d\Big(p(x)-q(x)\Big) \de x \Big|: L_f \leq 1 \Big\}.$$
+\end{definition}
 In this work, we restrict our attention to Lipschitz-continuous MDPs and policies. We make similar assumptions as in~\citep{pirotta2015policy}. For the MDP, we require both the continuity of the transition model and the reward:
 %
 \begin{assumption}[Lipschitz MDP]\label{ass:lipmdp}
@@ -153,7 +160,7 @@ In this work, we restrict our attention to Lipschitz-continuous MDPs and policie
 	for some positive real constants $L_{P}$ and $L_{R}$.
 \end{assumption}
 %
-where $\Kant(\cdot,\cdot)$ denotes the Kantorovich (or $1$-Wasserstein) distance between probability distributions and $d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right) = \norm{s-\wt{s}} + \norm{a-\wt{a}}$ is the taxicab norm on $\Sspace\times\Aspace$.
+where $d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right) = \norm{s-\wt{s}} + \norm{a-\wt{a}}$ is the taxicab norm on $\Sspace\times\Aspace$.
 We also require our deterministic policy to be continuous both \wrt the input state and its parameters:
 %
 \begin{assumption}[Lipschitz Policies]\label{ass:lippol}
