@@ -1,10 +1,9 @@
 \chapter{State of the Art} \label{chap:stateoftheart}
 
-\section{Reinforcement Learning}
-According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with ideas coming from dynamical systems theory, specifically with the \acf{MDP} that we detail in \mySubsec{subsec:mdp}. 
+According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with ideas coming from dynamical systems theory, specifically with the \acf{MDP} that we detail in \mySec{sec:mdp}. \todo{scaletta dello stato dell'arte}
 
-\subsection{Markov Decision Processes}\label{subsec:mdp}
-\acf{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time. More specifically, at each time step $t$, the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$.\\
+\section{\NoCaseChange{\acf{MDPs}}}\label{sec:mdp}
+\ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time. More specifically, at each time step $t$, the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$.\\
 \newline
 % MDP
 We define the \ac{MDP} according to~\citep[]{puterman2014markov}. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on the solution of continuous \ac{MDPs} as these are the most suitable for modeling continuous control problems.
@@ -20,8 +19,8 @@ The \ac{MDP} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \ga
 \end{itemize}
 \end{definition}
 The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.
-\subsubsection{Policy and Value Functions}
-The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policy are given later, in \mySubsec{subsec:solv} and \mySec{sec:ps}.\\
+\subsection{Policy and Value Functions}
+The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policy are given later, in \mySec{sec:tabmet} and \mySec{sec:ps}.\\
 The sum of rewards obtained if we consider time steps from $k=t$ to a certain $k=T$ is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
 \todo{Uso G come nome?}
 $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, $$where $r_k$ is the reward obtained at step $k$. The last time step $T$ represents the horizon of the task and can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuing} and a discount factor $\gamma<1$ is required in order to obtain a finite value for return $G_t$.\\
@@ -36,7 +35,7 @@ It represents the expected return obtained from taking the action $a$ in state $
 \newline
 Finally, we denote with $$A^{\pi}(s,a) = Q^{\pi}(s,a) - V^{\pi}(s)$$ the advantage function of policy $\pi$. It represents the advantage of performing action $a$ in state $s$, instead of the action prescribed by $\pi(s)$.
 
-\subsubsection{Performance Measure}
+\subsection{Performance Measure}
 In order to evaluate how good a policy $\pi$ is, we consider the expected reward obtained starting from a state $s \in \Sspace$ sampled from the initial-state distribution $\mu$ and following the policy $\pi$.\\
 The \emph{performance measure} $J(\pi)$ expressed in the form of an expected value is:
 $${J(\pi) = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}, a \sim \pi}R(s,a)} = \EV_{s\sim\mu}V^{\pi}(s),$$
@@ -46,7 +45,7 @@ and represents the probability of being in a certain state $s$ during the execut
 The performance measure can be used to identify the optimal policy that we want to learn in the \ac{RL} problem as:
 $$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
 
-\subsection{Solving a \ac{RL} task}\label{subsec:solv}
+\section{Tabular Solution Methods}\label{sec:tabmet}
 Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}. They are a subset of the \ac{MDPs} defined in \ref{def:mdp}. In finite \ac{MDPs}, $\Sspace$ and $\Aspace$ are finite sets of discrete values and the expressions reported so far can be used for finite \ac{MDPs} if we replace integrals with summations.\\
 Policies can be partially ordered according to their value function: 
 \begin{align}
@@ -91,8 +90,97 @@ $$ V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big)
 $$
 Differently from policy iteration, we don't consider any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions computed converges to $V^{*}$ \todo{cit smth related to the convergence?} and the optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp} with $V^{*}$ instead of $V^{\pi}$.
 
-\subsection{Alternatives to \ac{DP}}\label{subsec:alt}
+\subsection{Uncomplete Knowledge of \ac{MDPs}}
+
+\subsubsection{Tabular Alternatives to \ac{DP}}\label{subsec:alt}
 If we don't have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the interaction agent-environment at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. We don't detail these algorithms since they are not involved in our work.
+
+\subsubsection{Approximate Solution Methods}
+The methods present until now are not suitable to solve \ac{RL} problems that involve a larger state space. In these problems we cannot expect to obtain the optimal policy, our goal is to find a good approximate solution using limited computational resources. If we consider a continuous state space, it's very probable that the agents always visits states never seen before. Then, we need to generalize the experience we gather from a subset of states to all the state space. The generalization comes up in the form of \emph{function approximation}. In function approximation, the value function is not representable in a tabular form, instead of a table it is used a function estimated from samples.\\
+\newline
+There are several methods that rely on value function approximation to provide a solution of \ac{RL} problem. However function approximation arises new issues. First of all, convergence assurances are not easy to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the convergence to a local optimum, this is not the case when $\EV[U_t|S_t = s] = V^{\pi}(S_t)$. \todo{complex neural networks as approximate value fun?}
+
+\section{Policy Search}\label{sec:ps}
+In contrast to value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta} \in \Pi^{\theta}$. They directly operate in the parameter space $\Theta, \theta \in \Theta$ to find the optimal parametrized policy and typically avoid learning a value function. \ac{PS} copes with high dimensional state and action spaces and offers better convergence assurances than methods that involve function approximation. They have been found to be suitable in robotic applications. Most of the \ac{PS} algorithms are \emph{model-free} (\ie they don't require a representation of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly from the sampled trajectories, an exploration strategy is used to generate trajectories. Exploration can be performed in the action space or in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. Also the parameters that define the exploration distributions can be updated: usually the exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
+
+\subsection{Policy Representations} \label{subsec:polrep}
+In this work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^{m\times D}$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The simplest way of parametrizing $\pi_{\vtheta}$ is by means of a linear mapping. The linear policy is defined as $\pi_{\vtheta}(s) = \vtheta^T\vphi(s)$, where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of radial basis functions (RBF). An example of RBF is the Gaussian $\phi_i(s; \mu_i, \sigma_i) = \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}$, where $\mu_i$ and $\sigma_i$ are hyperparameters, $i=1,\dots,m$. More complex policy parametrizations include deep neural networks~\citep{duan2016benchmarking}. 
+Stochastic policies randomize over actions. In continuous settings, this is typically done by adding a Gaussian noise, \eg for a linear policy $a\sim\mathcal{N}(\vtheta^T\vphi(s),\Sigma)$, where $\Sigma\in\Reals^{D\times D}$ is a covariance matrix.\\
+\newline
+A common parametrization for countinuous actions, represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a real-valued scalar action, with mean and standard deviation given by parametric function approximators that depend on the state:
+$$ \pi_{\theta}(a|s) = \frac{1}{\sigma(s, \theta)\sqrt{2\pi}}exp\Big( -\frac{(a -\mu(s, \theta))^2}{2\sigma(s, \theta)^2}\Big),$$
+where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$.
+
+\subsection{Policy Gradient}
+The most important algorithms in \ac{PS} are the ones that learn the parameterized policy $\pi_{\theta}, \theta \in \mathbb{R}^d$ based on the gradient of some scalar performance measure $J(\theta)$ with respect to the policy parameter $\theta$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
+\begin{align}
+\theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)}, \label{eq:grad}
+\end{align}
+where $\widehat{\nabla J(\theta)} \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size, a scalar that controls the size of each update and can change through time. In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\forall s \in \Sspace, a \in \Aspace, \theta \in \mathbb{R}^d$.\\
+\newline
+With continuous policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas in $\epsilon$-greedy selction the action probabilities may change dramatically for an arbitrary small change in the estimated action values, if that change results in a different action having the maximal value. Stronger convergence guarantees are available for policy-gradient methods than for action-value methods. In particular, the continuity of the policy dependence on the parameters enables policy-gradient methods to approximate gradient ascent. According to [\cite{Peters2008ReinforcementLO}], if the gradient estimate is unbiased and learning rates fulfill
+$$\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty$$ \todo{sightly different from the citation}
+the learning process is guaranteed to converge to at least a local optimum. Policy-gradient methods can also incorporate domain knowledge in the policy definition and can be made safe by design.\\
+\newline
+Some methods also learn approximation to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function. In these methods, the function approximation for value function introduces bias but reduces variance and accelerates learning.
+
+\subsection{Policy Gradient Theorem}
+It may seem challenging to change the policy parameter in a way that ensures improvement. The problem is that the performance, \ie the measure to maximize, depends on both the action selections and the distribution of states in which those selctions are made, and both of these are affected by the policy parameter. We have to estimate the performance gradient with respect to the policy parameter when the gradient depends on the unknown effect of policy changes. Fortunately, there is an excellent theoretical answer to this challenge in the form of the \emph{policy gradient theorem}, which provides an analytic expression for $\nabla_{\theta}J(\theta)$ that does not involve the derivative of the state distribution $\delta^{\theta}(s)$.\\
+\newline
+The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the continuous case:
+\begin{align}
+\nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) Q^{\theta}(s,a) \de a \de s. \label{eq:pgt}
+\end{align}
+Starting from~\eqref{eq:pgt}, the performance gradient can be estimated from samples in different ways. The estimated value is exactly the value used in~\eqref{eq:grad} to perform an update iteration of policy parameter $\theta$.
+
+\subsection{Policy Gradient Algorithms}
+In this section we present some important algorithms and we show their property that are interesting to compare these existing algorithms with our work.
+\subsubsection{REINFORCE}
+According to [\citet{Williams1992SimpleSG}] it is possible to estimate the gradient from a single trajectory: we replace in~\eqref{eq:pgt} the integral over $a$ with an expectation under $\pi$, and then sampling the expectation:
+\begin{align}
+\nabla_{\theta}J(\theta) &= \int_s \delta^{\theta}(s) \int_a \pi(a|s) \frac{\nabla_{\theta} \pi(a|s)}{\pi(a|s)} Q^{\theta}(s,a) \de a \de s \nonumber\\
+&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)} Q^{\theta}(s_t,a_t) \Big] \nonumber\\
+&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \nabla_{\theta} \log\pi(a_t|s_t) r_t(s_t, a_t) \Big] \label{eq:rein}
+\end{align}
+where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi(a_t|s_t) = \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)}$ and $r_t(s_t, a_t) = \sum_{j = t}^T \gamma^{j-t} R(s_j, a_j)$.\\
+\newline
+From~\eqref{eq:pgt} we observe that if $b(s)$ does not depend on $a$ we can write:
+$$ \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) -b(s) \Big) \de a \de s. $$
+Indeed: $\int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0.$
+$b(s)$ is called baseline and allows to reduce the variance of the estimate, that considerably slow the convergence of the algorithm.
+\todo{spiegare come vengono considerate somme/medie degli step della traiettoria}
+A common baseline used is:
+$$ b_k^h = \frac{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2r_k \Big\rangle}{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2\Big \rangle}
+$$
+and $Q^{\theta}(s,a)$ is replaced with:
+$$ g_h = \Big\langle \sum_{l=0}^{H} \Big( \sum_{k=0}^{l} \nabla_{\theta} \log \pi^{\theta}(a_k|s_k)\Big)(r_l - b_l^h)\Big\rangle.
+$$
+This is one of the most common policy gradient algorithms and we use it in our work to set a comparison with a state of the art algorithm in policy search.
+
+\subsubsection{PGPE}
+\todo{spiegare (anche prima) likelihood gradient}
+\acf{PGPE}[\citet{sehnke2008PolicyGradient}] estimates a likelihood gradient by sampling directly in parameter space, which reduces the variance of estimates compared to REINFORCE. This is due to the fact that once parameters are sampled, we can generate an entire action-state history (trajectory) while in REINFORCE we draw the action from the policy at each time step.\\
+\newline
+Indeed, we replace the stochastic policy with a probability distribution over the parameter themselves:
+$$ \pi^{\theta}(a|s) = \int_{\Theta} p(\theta) \delta_{\mu^{\theta}(s)}\de \theta,
+$$
+where $\delta_{\mu^{\theta}(s)}$ is the Dirac delta function of a deterministic policy $\mu^{\theta}$ depending on parameter $\theta$ weighted for a distribution $p(\theta)$.
+
+\subsubsection{DPG}
+\acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
+\newline
+Policy gradient algorithms are perhaps the most popular class of continuous action reinforcement learning algorithms, starting from the results obtained by the \emph{policy gradient theorem}, we consider a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[r(s, \mu_{\theta}(s))]$. 
+By applying the chain rule we see that the policy improvement may be decomposed:
+$$
+\nabla_{\theta} Q^{\mu}(s, \mu_{\theta}(s)) = \nabla_{\theta}\mu_{\theta}(s)\nabla_a Q^{\mu}(s, a)|_{a=\mu_{\theta}(s)}
+$$
+Suppose that $\nabla_{\theta}\mu_{\theta}(s)$ and $\nabla_aQ^{\mu}(s,a)$ exist, then:
+$$
+\nabla_{\theta}J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}} [\nabla_{\theta} \mu_{\theta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\theta} (s)}]
+$$
+We use the deterministic policy gradient theorem to derive an off-policy actor-critic algorithm. It learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q^{\mu}(s,a)$. 
+
+\section{Special \NoCaseChange{\ac{MDPs}}}
 
 \subsection{Bounded \ac{MDPs}}
 A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values: given a lower bound $\underline{P}$ and an upper bound $\overline{P}$, $P_{\updownarrow} = [\underline{P}; \overline{P}]$. Similarly we can specify the interval $R_{\updownarrow}$. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one.\\
@@ -195,94 +283,6 @@ and also of the future-state distributions \wrt policy parameters:
 	\end{align}
 	where $L_{\delta^{\vtheta}} = {\gamma L_{P}L_{\pi_{\vtheta}}}\big/{\left(1-\gamma L_{P}(1+L_{\pi_{\vtheta}})\right)}$.
 \end{lemma}
-
-\section{Policy Search}\label{sec:ps}
-
-\subsection{Larger problems}
-The methods present until now are not suitable to solve \ac{RL} problems that involve a larger state space. In these problems we cannot expect to obtain the optimal policy, our goal is to find a good approximate solution using limited computational resources. If we consider a continuous state space, it's very probable that the agents always visits states never seen before. Then, we need to generalize the experience we gather from a subset of states to all the state space. The generalization comes up in the form of \emph{function approximation}. In function approximation, the value function is not representable in a tabular form, instead of a table it is used a function estimated from samples.\\
-\newline
-There are several methods that rely on value function approximation to provide a solution of \ac{RL} problem. However function approximation arises new issues. First of all, convergence assurances are not easy to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the convergence to a local optimum, this is not the case when $\EV[U_t|S_t = s] = V^{\pi}(S_t)$. \todo{complex neural networks as approximate value fun?}
-
-\subsection{Policy Search}
-In contrast to value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta} \in \Pi^{\theta}$. They directly operate in the parameter space $\Theta, \theta \in \Theta$ to find the optimal parametrized policy and typically avoid learning a value function. \ac{PS} copes with high dimensional state and action spaces and offers better convergence assurances than methods that involve function approximation. They have been found to be suitable in robotic applications. Most of the \ac{PS} algorithms are \emph{model-free} (\ie they don't require a representation of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly from the sampled trajectories, an exploration strategy is used to generate trajectories. Exploration can be performed in the action space or in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. Also the parameters that define the exploration distributions can be updated: usually the exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
-
-\subsubsection{Policy Representations} \label{subsec:polrep}
-In this work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^{m\times D}$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The simplest way of parametrizing $\pi_{\vtheta}$ is by means of a linear mapping. The linear policy is defined as $\pi_{\vtheta}(s) = \vtheta^T\vphi(s)$, where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of radial basis functions (RBF). An example of RBF is the Gaussian $\phi_i(s; \mu_i, \sigma_i) = \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}$, where $\mu_i$ and $\sigma_i$ are hyperparameters, $i=1,\dots,m$. More complex policy parametrizations include deep neural networks~\citep{duan2016benchmarking}. 
-Stochastic policies randomize over actions. In continuous settings, this is typically done by adding a Gaussian noise, \eg for a linear policy $a\sim\mathcal{N}(\vtheta^T\vphi(s),\Sigma)$, where $\Sigma\in\Reals^{D\times D}$ is a covariance matrix.\\
-\newline
-A common parametrization for countinuous actions, represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a real-valued scalar action, with mean and standard deviation given by parametric function approximators that depend on the state:
-$$ \pi_{\theta}(a|s) = \frac{1}{\sigma(s, \theta)\sqrt{2\pi}}exp\Big( -\frac{(a -\mu(s, \theta))^2}{2\sigma(s, \theta)^2}\Big),$$
-where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$.
-
-\subsection{Policy Gradient}
-The most important algorithms in \ac{PS} are the ones that learn the parameterized policy $\pi_{\theta}, \theta \in \mathbb{R}^d$ based on the gradient of some scalar performance measure $J(\theta)$ with respect to the policy parameter $\theta$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
-\begin{align}
-\theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)}, \label{eq:grad}
-\end{align}
-where $\widehat{\nabla J(\theta)} \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size, a scalar that controls the size of each update and can change through time. In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\forall s \in \Sspace, a \in \Aspace, \theta \in \mathbb{R}^d$.\\
-\newline
-With continuous policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas in $\epsilon$-greedy selction the action probabilities may change dramatically for an arbitrary small change in the estimated action values, if that change results in a different action having the maximal value. Stronger convergence guarantees are available for policy-gradient methods than for action-value methods. In particular, the continuity of the policy dependence on the parameters enables policy-gradient methods to approximate gradient ascent. According to [\cite{Peters2008ReinforcementLO}], if the gradient estimate is unbiased and learning rates fulfill
-$$\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty$$ \todo{sightly different from the citation}
-the learning process is guaranteed to converge to at least a local optimum. Policy-gradient methods can also incorporate domain knowledge in the policy definition and can be made safe by design.\\
-\newline
-Some methods also learn approximation to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function. In these methods, the function approximation for value function introduces bias but reduces variance and accelerates learning.
-
-\subsection{Policy Gradient Theorem}
-It may seem challenging to change the policy parameter in a way that ensures improvement. The problem is that the performance, \ie the measure to maximize, depends on both the action selections and the distribution of states in which those selctions are made, and both of these are affected by the policy parameter. We have to estimate the performance gradient with respect to the policy parameter when the gradient depends on the unknown effect of policy changes. Fortunately, there is an excellent theoretical answer to this challenge in the form of the \emph{policy gradient theorem}, which provides an analytic expression for $\nabla_{\theta}J(\theta)$ that does not involve the derivative of the state distribution $\delta^{\theta}(s)$.\\
-\newline
-The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the continuous case:
-\begin{align}
-\nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) Q^{\theta}(s,a) \de a \de s. \label{eq:pgt}
-\end{align}
-Starting from~\eqref{eq:pgt}, the performance gradient can be estimated from samples in different ways. The estimated value is exactly the value used in~\eqref{eq:grad} to perform an update iteration of policy parameter $\theta$.
-
-\subsection{Algorithms}
-In this section we present some important algorithms and we show their property that are interesting to compare these existing algorithms with our work.
-\subsubsection{REINFORCE}
-According to [\citet{Williams1992SimpleSG}] it is possible to estimate the gradient from a single trajectory: we replace in~\eqref{eq:pgt} the integral over $a$ with an expectation under $\pi$, and then sampling the expectation:
-\begin{align}
-	\nabla_{\theta}J(\theta) &= \int_s \delta^{\theta}(s) \int_a \pi(a|s) \frac{\nabla_{\theta} \pi(a|s)}{\pi(a|s)} Q^{\theta}(s,a) \de a \de s \nonumber\\
-	&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)} Q^{\theta}(s_t,a_t) \Big] \nonumber\\
-	&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \nabla_{\theta} \log\pi(a_t|s_t) r_t(s_t, a_t) \Big] \label{eq:rein}
-\end{align}
-where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi(a_t|s_t) = \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)}$ and $r_t(s_t, a_t) = \sum_{j = t}^T \gamma^{j-t} R(s_j, a_j)$.\\
-\newline
-From~\eqref{eq:pgt} we observe that if $b(s)$ does not depend on $a$ we can write:
-$$ \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) -b(s) \Big) \de a \de s. $$
-Indeed: $\int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0.$
-$b(s)$ is called baseline and allows to reduce the variance of the estimate, that considerably slow the convergence of the algorithm.
-\todo{spiegare come vengono considerate somme/medie degli step della traiettoria}
-A common baseline used is:
-$$ b_k^h = \frac{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2r_k \Big\rangle}{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2\Big \rangle}
-$$
-and $Q^{\theta}(s,a)$ is replaced with:
-$$ g_h = \Big\langle \sum_{l=0}^{H} \Big( \sum_{k=0}^{l} \nabla_{\theta} \log \pi^{\theta}(a_k|s_k)\Big)(r_l - b_l^h)\Big\rangle.
-$$
-This is one of the most common policy gradient algorithms and we use it in our work to set a comparison with a state of the art algorithm in policy search.
-
-\subsubsection{PGPE}
-\todo{spiegare (anche prima) likelihood gradient}
-\acf{PGPE}[\citet{sehnke2008PolicyGradient}] estimates a likelihood gradient by sampling directly in parameter space, which reduces the variance of estimates compared to REINFORCE. This is due to the fact that once parameters are sampled, we can generate an entire action-state history (trajectory) while in REINFORCE we draw the action from the policy at each time step.\\
-\newline
-Indeed, we replace the stochastic policy with a probability distribution over the parameter themselves:
-$$ \pi^{\theta}(a|s) = \int_{\Theta} p(\theta) \delta_{\mu^{\theta}(s)}\de \theta,
-$$
-where $\delta_{\mu^{\theta}(s)}$ is the Dirac delta function of a deterministic policy $\mu^{\theta}$ depending on parameter $\theta$ weighted for a distribution $p(\theta)$.
-
-
-\subsubsection{DPG}
-\acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
-\newline
-Policy gradient algorithms are perhaps the most popular class of continuous action reinforcement learning algorithms, starting from the results obtained by the \emph{policy gradient theorem}, we consider a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[r(s, \mu_{\theta}(s))]$. 
-By applying the chain rule we see that the policy improvement may be decomposed:
-$$
-\nabla_{\theta} Q^{\mu}(s, \mu_{\theta}(s)) = \nabla_{\theta}\mu_{\theta}(s)\nabla_a Q^{\mu}(s, a)|_{a=\mu_{\theta}(s)}
-$$
-Suppose that $\nabla_{\theta}\mu_{\theta}(s)$ and $\nabla_aQ^{\mu}(s,a)$ exist, then:
-$$
-\nabla_{\theta}J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}} [\nabla_{\theta} \mu_{\theta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\theta} (s)}]
-$$
-We use the deterministic policy gradient theorem to derive an off-policy actor-critic algorithm. It learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q^{\mu}(s,a)$. 
 
 \section{Safe Reinforcement Learning}\label{sec:saferl}
 
