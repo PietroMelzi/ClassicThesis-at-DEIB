@@ -3,10 +3,12 @@
 \pdfbookmark[1]{Preface}{Preface}
 
 \chapter*{Preface}
-A preface is an introduction to a book or other literary work
-written by the work's author. A preface generally covers the story
-of how the book came into being, or how the idea for the book was
-developed.
-
-\section*{Motivation}
-Graduating is not the motivation that one expects here.
+%rl
+One of the challenges that arise in \acf{RL} is the trade-off between exploration and exploitation. To obtain an high reward, an agent must perform actions that it has found to be effective in producing reward. But to discover such actions, it has to try actions that it has not selected before. An intuitive approach to the issue is to perform random actions in the beginning of the task, so as to test as many actions as possible in a first phase and then exploit the most rewarding actions in the long term. Allowing random actions in any state means that potentially the agent can evaluate the entire range of feasible behaviours. An approach of this kind strongly supports exploration and provides future advantages for the agent.\\
+\newline
+%problem
+If the agent evolves into a simulator there are no concerns with this method, however when the agent interacts with a real-life environment serious drawbacks come up. The lack of command on the agent's behaviour can lead to dangerous actions that damage the agent's hardware or, even worse, harm the humans that operate in the environment. Because of this safety issue, \ac{RL} techniques are scarcely used in fields where they could provide outstanding benefits as industrial robotics, surgery (\cite{baek2018PathPlanning}) or autonomous driving. Again, another important scenario in which the randomness of actions is unwanted is finance: certainly nobody wants to perform stochastic operations involving their money. In \ac{RL} several definitions of safety have been proposed (we discuss them in \mySec{sec:saferl}), however the problem of random actions is poorly addressed. The reason is that in \ac{RL} the stochasticity is essential for exploration. Indeed, if the agent does always the same action in every state, it cannot find any better action that improves its behaviour.\\
+\newline
+%solution
+\todo{finire l'ultimo pezzo}
+Driven by these motivations, we provide a solution that aims to ensure safety conditions in the agent-environment interaction by always monitoring the agent's behaviour. The solution is suitable for regular environments, \ie environments in which if we perform the same action from similar states, we will obtain similar effects. Then, the regularity of the environment allows to compare the effect of different actions in the same state, even if they are performed from different states. Thanks to this kind of exploration, the agent's behaviour is no more required to be stochastic. This approach sacrifices the performance of the learning phase: can be impossible to reach some optimal policy or also the same policy is obtained really faster with oher algorithms. On the other hand the approach ensures the safety requirements that are the reason of this research work.
