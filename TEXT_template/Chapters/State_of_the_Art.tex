@@ -1,48 +1,51 @@
 \chapter{State of the Art} \label{chap:stateoftheart}
 
-According to (\cite{sutton2018reinforcement}), \acf{RL} is learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with ideas coming from dynamical systems theory, specifically with the \acf{MDP} that we detail in \mySec{sec:mdp}. \todo{scaletta dello stato dell'arte}
+According to [\cite{sutton2018reinforcement}], \acf{RL} consists in learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with an idea coming from dynamical systems theory, specifically with the \acf{MDPs} that we detail in \mySec{sec:mdp}.\\
+\newline
+\MyChap{chap:stateoftheart} provides a strong theoretical contribution to our work. After the introduction on \ac{MDPs} in \mySec{sec:mdp}, \mySec{sec:tabmet} refers to the \emph{Tabular Methods} used to solve \ac{MDPs}. Even if the application of these methods is limited by computational costs, they provides basic concepts in \ac{RL}. \MySec{sec:ps} explores \emph{\acf{PS}}, a class of methods that solve \ac{RL} problems with a different approach. \ac{PS} offers several advantages in the robotic field. Then, we present two special types of \ac{MDPs} in \mySec{sec:specmdp}: \emph{Bounded \ac{MDPs}}, suitable to model uncertainty in the environment, and \emph{Lipschitz \ac{MDPs}}, suitable to model regularity in the environment. Finally, \mySec{sec:saferl} presents some existing approaches to the safety issue in \ac{RL} and \mySec{sec:stdisc} presents some topics related to state discretization.
 
 \section{\NoCaseChange{\acf{MDPs}}}\label{sec:mdp}
-\ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time. More specifically, at each time step $t$, the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$.\\
-\newline
-% MDP
-We define the \ac{MDP} according to~\citep[]{puterman2014markov}. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on the solution of continuous \ac{MDPs} as these are the most suitable for modeling continuous control problems.
+\ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time.
 \begin{definition}[MDP]\label{def:mdp}
 The \ac{MDP} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
 \begin{itemize}
 	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
 	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$.
-	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$. For any state-action pair $(s,a)$, it holds the following equality:
-	$$ \sum_{s' \in \Sspace} P(s'|s,a) = 1.$$
+	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$. $P(.|s,a)$ is a distribution of probability on the arriving state, then for any state-action pair $(s,a)$, the following equality holds:
+	\begin{align} \sum_{s' \in \Sspace} P(s'|s,a) = 1. \end{align}
 	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$.
 	\item $\gamma \in [0, 1)$ is the discount factor, eventually used to discount the present effect of future rewards.
 \end{itemize}
 \end{definition}
-The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.
+\noindent The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.\\
+\newline
+The interaction between agent and environment can be better explained with symbols: at each time step $t$ the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$. We define the \ac{MDP} according to [\cite{puterman2014markov}]. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on continuous set \ac{MDPs} as these are the most suitable for modeling continuous control problems.
 \subsection{Policy and Value Functions}
-The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policy are given later, in \mySec{sec:tabmet} and \mySec{sec:ps}.\\
-The sum of rewards obtained if we consider time steps from $k=t$ to a certain $k=T$ is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
+The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policies are given later, in \mySec{sec:tabmet} and \mySec{sec:ps}. The sum of rewards obtained by the agent, if we consider the time steps $k \in (t, T]$, where the time step $T$ represents the horizon of the task, is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
 \todo{Uso G come nome?}
-$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, $$where $r_k$ is the reward obtained at step $k$. The last time step $T$ represents the horizon of the task and can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuing} and a discount factor $\gamma<1$ is required in order to obtain a finite value for return $G_t$.\\
+\begin{align}G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, \end{align} where $r_k$ is the reward obtained at step $k$. The horizon $T$ can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuing} and a discount factor $\gamma<1$ is required in order to obtain a return $G_t < \infty$.\\
 \newline
 In this work, we denote with $\pi(a|s)$ the probability of performing the action $a$ in the state $s$, according to the policy $\pi$. Since $\pi(s)$ is a distribution of probability, the following equality holds:
-$$\sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace.$$
+\begin{align} \sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace. \end{align}
 If, for each state $s \in \Sspace$, there exists an action $a$ such that $\pi(a|s) = 1$, the policy is deterministic.\\
 \newline
-Given a policy $\pi$, it is possible to compute the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$, a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$ according to the expected return obtainable from that state. Since the rewards the agent can expect to receive in the future depend on the taken actions, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: $$V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a.$$
-For control purposes, we can also define an action-value function: $$Q^{\pi}(s,a) = R(s,a) + \gamma \int_{\Sspace} P(s'|s,a) \int_{\Aspace} \pi(a'|s') Q^{\pi}(s',a') \de a' \de s'.$$
-It represents the expected return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. \\
+Given a policy $\pi$, it is possible to compute the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$. This is a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$, according to the expected return obtainable from that state. Since the rewards that the agent can expect to receive in the future depend on the actions taken in any state, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: 
+\begin{align} V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a.\end{align}
+For control purposes, we can also define an action-value function $Q^{\pi}: \Sspace \times \Aspace \rightarrow \mathbb{R}$: \begin{align} Q^{\pi}(s,a) = R(s,a) + \gamma \int_{\Sspace} P(s'|s,a) \int_{\Aspace} \pi(a'|s') Q^{\pi}(s',a') \de a' \de s'.\end{align}
+$Q^{\pi}(s,a)$ represents the expected return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. \\
 \newline
-Finally, we denote with $$A^{\pi}(s,a) = Q^{\pi}(s,a) - V^{\pi}(s)$$ the advantage function of policy $\pi$. It represents the advantage of performing action $a$ in state $s$, instead of the action prescribed by $\pi(s)$.
+Finally, we denote with
+\begin{align} A^{\pi}(s,a) = Q^{\pi}(s,a) - V^{\pi}(s) \end{align}
+the advantage function of policy $\pi$, that represents the advantage in terms of value functions given by performing action $a$ in state $s$, instead of the action prescribed by $\pi(s)$.
 
 \subsection{Performance Measure}
-In order to evaluate how good a policy $\pi$ is, we consider the expected reward obtained starting from a state $s \in \Sspace$ sampled from the initial-state distribution $\mu$ and following the policy $\pi$.\\
-The \emph{performance measure} $J(\pi)$ expressed in the form of an expected value is:
-$${J(\pi) = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}, a \sim \pi}R(s,a)} = \EV_{s\sim\mu}V^{\pi}(s),$$
+In order to evaluate how good a policy $\pi$ is, we consider the expected return obtained starting from a state $s \in \Sspace$ drawn from the initial-state distribution $\mu$ and following the policy $\pi$. The \emph{performance measure} $J(\pi)$ expressed in the form of an expected value is:
+\begin{align} {J(\pi) = \EV_{s_0\sim\mu}{G_0} \quad = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}, a \sim \pi}R(s,a)} \quad = \EV_{s\sim\mu}V^{\pi}(s), \end{align}
 where $\delta^{\pi}$ is the $\gamma$-discounted future-state distribution. This function is defined as:
-$$\delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P^{\pi}(S_t = s|S_0=s_0)$$
+\begin{align} \delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P^{\pi}(S_t = s|S_0=s_0) \end{align}
 and represents the probability of being in a certain state $s$ during the execution of the task, provided that the policy is $\pi$ and the initial state distribution is $\mu$.\\
-The performance measure can be used to identify the optimal policy that we want to learn in the \ac{RL} problem as:
+\newline
+The performance measure is used to identify the optimal policy $\pi^{*}$ that we want to learn in the \ac{RL} problem as:
 $$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
 
 \section{Tabular Solution Methods}\label{sec:tabmet}
@@ -180,7 +183,7 @@ $$
 $$
 We use the deterministic policy gradient theorem to derive an off-policy actor-critic algorithm. It learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q^{\mu}(s,a)$. 
 
-\section{Special \NoCaseChange{\ac{MDPs}}}
+\section{Special \NoCaseChange{\ac{MDPs}}} \label{sec:specmdp}
 
 \subsection{Bounded \ac{MDPs}}
 A \acf{BMDP}~\citep[]{givan2000bounded} is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values: given a lower bound $\underline{P}$ and an upper bound $\overline{P}$, $P_{\updownarrow} = [\underline{P}; \overline{P}]$. Similarly we can specify the interval $R_{\updownarrow}$. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one.\\
@@ -286,4 +289,4 @@ and also of the future-state distributions \wrt policy parameters:
 
 \section{Safe Reinforcement Learning}\label{sec:saferl}
 
-\section{State discretization}
+\section{State discretization} \label{sec:stdisc}
