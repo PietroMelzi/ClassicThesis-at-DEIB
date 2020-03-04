@@ -164,19 +164,29 @@ In practice, the value functions $Q^{\theta}$ and $V^{\theta}$ are not available
 \begin{align}
 \widehat{\nabla_{\theta}J}(\theta) = \sum_{k=0}^{T-1} \nabla_{\theta}\log\pi_{\theta}(a_k|s_k)\Big(\sum_{l=k+1}^{T}\gamma^{l-1}r_{l} - b_{l} \Big),
 \end{align}
-where the variance-minimizing baseline [\cite{Peters2008ReinforcementLO}] is:
+where the variance-minimizing baseline [\cite{Peters2008ReinforcementLO}] is: \todo{controllare indici delle formule}
 \begin{align} b_l = \frac{\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2 \gamma^{l-1}r_l} {\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2}
-\end{align}
+\end{align} 
 This is one of the most common policy gradient algorithms and we use it in our work to compare our algorithm with a standard algorithm in policy search.
 
 \subsubsection{PGPE} \label{subsec:pgpe}
-\todo{spiegare (anche prima) likelihood gradient}
-\acf{PGPE}[\citet{sehnke2008PolicyGradient}] estimates a likelihood gradient by sampling directly in parameter space, which reduces the variance of estimates compared to REINFORCE. This is due to the fact that once parameters are sampled, we can generate an entire action-state history (trajectory) while in REINFORCE we draw the action from the policy at each time step.\\
+\acf{PGPE}[\citet{sehnke2008PolicyGradient}] is a method that estimates a gradient by directly sampling in parameter space, this feature reduces the variance in the estimates in comparison to REINFORCE. In \ac{PGPE} the policy is defined by a distribution over the parameters of deterministic controllers that we indicate with the function $\mu_{\theta}: \Sspace \to \Aspace$. At the beginning of each step, the parameter $\theta$ of the controller are sampled and then, the deterministic policy $\mu_{\theta}$ generated from $\theta$ is followed for all the episode length. This is the reason why the variance is lower in \ac{PGPE} than in REINFORCE. Indeed, in REINFORCE a repetitive sampling from a stochastic policy is performed and the variance increases even in the same episode, since every state depends on the previous history of the episode that grows in time.\\
 \newline
-Indeed, we replace the stochastic policy with a probability distribution over the parameter themselves:
-$$ \pi^{\theta}(a|s) = \int_{\Theta} p(\theta) \delta_{\mu^{\theta}(s)}\de \theta,
-$$
-where $\delta_{\mu^{\theta}(s)}$ is the Dirac delta function of a deterministic policy $\mu^{\theta}$ depending on parameter $\theta$ weighted for a distribution $p(\theta)$.
+As we said, in \ac{PGPE} the stochasticity that in REINFORCE was given by a stochastic policy $\pi_{\theta}$ is replaced by a probability distribution over the parameter $\theta$ themselves. In turn, this probability distribution is parameterized with parameter $\rho$, independent from $\theta$. Given a parameter space $\Theta$ for (deterministic) controllers $\mu_{\theta}, \theta \in \Theta$, the policy considered to perform exploration in the task is:
+\begin{align}
+\pi_{\rho}(a|s) = \int_{\Theta} p_{\rho}(\theta) \delta_{\mu_{\theta}(s)}\de \theta,
+\end{align}
+where $\delta_{\mu_{\theta}(s)}$ is the Dirac delta function corresponding to the deterministic controller $\mu_{\theta}$ depending on parameter $\theta$ sampled from a distribution with probability $p_{\rho}(\theta)$.\\
+\newline
+Given a trajectory $h \in \mathbb{H}$, where $\mathbb{H}$ is the set of possible trajectories, a probability $p_{\rho}(h, \theta)$ of sampling parameter $\theta$ and trajectory $h$ and defined $G(h)$ the return of trajectory $h$, we can define a suitable performance measure $J(\rho)$ as:
+\begin{align}
+J(\rho) = \int_{\Theta} \int_{\mathbb{H}} p_{\rho}(h, \theta) G(h) \de h \de \theta. \label{eq:pgpej}
+\end{align}
+From \ref{eq:pgpej}, we can write the expected value of the gradient of $J$ \wrt the distribution parameter $\rho$ as:
+\begin{align}
+	\widehat{\nabla_{\rho}J}(\rho) \approx \nabla_{\rho} \log p_{\rho} (\theta) G(h),
+\end{align}
+where $\theta$ is sampled at the beginning of the episode and $h$ is resulting from the deterministic controller $\mu_{\theta}$. Usually, we can consider the parameter $\rho$ learnt by the algorithm as $\rho = \Big( \{\mu_i\}, \{\sigma_i\} \Big)$, where $\mu_i$ and $\sigma_i$ are the parameters that determine an indipendent normal distribution $p_{\rho_i}(\theta)$ for each parameter $\theta_i \in \Theta$.  
 
 \subsubsection{DPG} \label{subsec:dpg}
 \acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
