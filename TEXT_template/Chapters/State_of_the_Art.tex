@@ -46,62 +46,62 @@ where $\delta^{\pi}$ is the $\gamma$-discounted future-state distribution. This 
 and represents the probability of being in a certain state $s$ during the execution of the task, provided that the policy is $\pi$ and the initial state distribution is $\mu$.\\
 \newline
 The performance measure is used to identify the optimal policy $\pi^{*}$ that we want to learn in the \ac{RL} problem as:
-$$ \pi^{*} \in \arg \max_{\pi} J(\pi).$$
+\begin{align} \pi^{*} \in \arg \max_{\pi} J(\pi). \end{align}
 
 \section{Tabular Solution Methods}\label{sec:tabmet}
-Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}. They are a subset of the \ac{MDPs} defined in \ref{def:mdp}. In finite \ac{MDPs}, $\Sspace$ and $\Aspace$ are finite sets of discrete values and the expressions reported so far can be used for finite \ac{MDPs} if we replace integrals with summations.\\
+Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}, a subset of the \ac{MDPs} defined in \ref{def:mdp}. In order to reason with finite \ac{MDPs}, we consider the state space $\Sspace$ and the action space $\Aspace$ as finite sets of discrete values and we replace all the integrals appearing in the expressions reported so far with summations. The methods used to solve problems involving finite \ac{MDPs} are called \emph{tabular} because the state space $\Sspace$ and the action space $\Aspace$ are small enough for the value functions to be represented in a tabular format.\\
+\newline
 Policies can be partially ordered according to their value function: 
 \begin{align}
-\pi' \geq \pi \iff V^{\pi'}(s) \geq V^{\pi}(s) \forall s \in \Sspace. \label{eq:ordpol}
+\pi' \geq \pi \iff V^{\pi'}(s) \geq V^{\pi}(s) \quad \forall s \in \Sspace. \label{eq:ordpol}
 \end{align} 
-In finite \ac{MDPs} there always exists a deterministic optimal policy $\pi^{*}$. The value function $V^{*}$ computed according to $\pi^{*}$ has the following property:
-$$ V^{*}(s) = \max_{\pi}V^{\pi}(s) \quad \forall s \in \Sspace.$$
-Optimal functions can be written with the Bellman optimality equations:
-\begin{align*}
+In finite \ac{MDPs}, there always exists a deterministic optimal policy $\pi^{*}$ such that $\pi^{*} \geq \pi \quad \forall \pi \in \Pi$, said $\Pi$ the set of policies. The value function $V^{*}$ computed according to $\pi^{*}$ has the following property:
+\begin{align} V^{*}(s) = \max_{\pi}V^{\pi}(s) \quad \forall s \in \Sspace. \end{align}
+Optimal value function $V^{*}$ and optimal action-value function $Q^{*}$ can be written with the Bellman optimality equations:
+\begin{align}
 V^{*}(s) &= \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)   V^{*}(s') \Big)\\
 Q^{*}(s,a) &= R(s,a) + \gamma \sum_{s'}P(s'|s,a) \max_{a'} Q^{*}(s', a').
-\end{align*}
-If we have a \emph{complete knowledge} of the environment, \ie the agent has a model of transition and reward functions of the \ac{MDP}, we can use \acf{DP} to solve the \ac{RL} problem (\mySubsec{subsec:dp}).\\
-Instead, in the case of \emph{incomplete knowledge} the unknown functions can be estimated from experience (\mySubsec{subsec:alt}).\\
-These algorithms are called \emph{tabular} because the state and action spaces are small enough for the value functions to be represented in a tabular format.\\
+\end{align}
+If the agent has a \emph{complete knowledge} of the environment, \ie the agent knows the transition function $P$ and the reward function $R$ of the \ac{MDP} $M$ representing the environment, \acf{DP} can be used to solve the \ac{RL} problem. Details are provided in \mySubsec{subsec:dp}. Instead, if the agent has an \emph{incomplete knowledge} of the environment, the unknown functions $P$ and $R$ of \ac{MDP} $M$ can be estimated from experience. Details are provided in \mySubsec{subsec:alt}.\\
 \newline
-When the problems involve finite \ac{MDPs} with a larger state space or continuous \ac{MDPs}, we have two possibilities: replace the exact value functions with \emph{function approximators} or search the optimal policy in the policy space, the latter doesn't require to compute any value function (\mySec{sec:ps}).
+When the problems involve finite \ac{MDPs} with a larger state space or continuous \ac{MDPs}, tabular methods are no more suitable because value functions cannot be represented in tables. Two main approaches are possible:
+\begin{itemize}
+	\item the value functions can be estimated with \emph{function approximators} and used to solve the task;
+	\item the optimal policies can be directly searched in the space of policies, without the necessity of computing any value function. Details are provided in (\mySec{sec:ps}).
+\end{itemize}
 
 \subsection{Dynamic Programming}\label{subsec:dp}
-\acf{DP} is a collection of algorithms that can be used to compute optimal policies, given a model of the environment in the form of \ac{MDP}. Since \ac{DP} is computationaly expensive and requires finite \ac{MDP}s, its utility in solving \ac{RL} problems is limited. However \ac{DP} provides strong foundation for understanding the following methods.\\
-\newline
-\ac{DP} offers two possibilities to compute the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
+\acf{DP} is a collection of algorithms that can be used to compute optimal policies, given a model of the environment in the form of an \ac{MDP}. Since \ac{DP} is computationaly expensive and requires finite \ac{MDPs}, its utility in solving \ac{RL} problems is limited. However \ac{DP} provides strong foundation for understanding the following methods. \ac{DP} offers two algorithms that compute the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
 
 \subsubsection{Policy Iteration}
 In policy iteration, two consecutive operations are performed on a policy $\pi$ in order to obtain a policy $\pi'$ that is better according to the ordering rule in~\eqref{eq:ordpol}. These operations are called \emph{policy evaluation} and \emph{policy improvement} and the goal of the algorithm is to obtain the optimal value function $V^{*}$ through the sequence:
-$$ \pi_{0} \xrightarrow{\text{E}} V^{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V^{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V^{*}.
-$$
-Policy evaluation consists in computing the value function $V^{\pi}$ for every state $s \in \Sspace$, according to the current policy $\pi$, by iteratively applying the following update rule:
-$$
-V_{k+1}(s) = \sum_{a}\pi(a|s) \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a) V_{k}(s') \Big),
-$$
-until $V_{k}$ converges to $V^{\pi}$. The existence of $V^{\pi}$ is guaranteed as long as $\gamma < 1$. \todo{cit smth related to the convergence?} \\
+\begin{align}
+\pi_{0} \xrightarrow{\text{E}} V^{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V^{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V^{*}.
+\end{align}
+Policy evaluation consists in computing the value function $V^{\pi}$ for every state $s \in \Sspace$, according to the current policy $\pi$, by iteratively applying the following updating rule:
+\begin{align} V_{k+1}(s) = \sum_{a}\pi(a|s) \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a) V_{k}(s') \Big), \label{eq:updrule} \end{align}
+until $V_{k+1}(s) = V_{k}(s) \quad \forall s \in \Sspace$. When it happens, the convergence to $V^{\pi}$ is obtained. The existence of $V^{\pi}$ is guaranteed as long as $\gamma < 1$. \todo{enough for convergence? cit some paper?} \\
 \newline
-Policy improvement consists in updating the policy $\pi$ in a new deterministic policy $\pi'$, according to the value function $V^{\pi}$ computed in the previous policy evaluation. For each state $s \in \Sspace$, the policy $\pi'$ is computed according to the following rule:
+Policy improvement consists in an update of policy $\pi$ in a new deterministic policy $\pi'$, according to the value function $V^{\pi}$ computed in the previous policy evaluation. For each state $s \in \Sspace$, indeed, the policy $\pi'$ is computed according to the following rule:
 \begin{align} 
 \pi'(s) = \arg \max_{a} \Big( R(s,a) + \gamma \sum_{s'} P(s'|s,a)  V^{\pi}(s') \Big). \label{eq:polimp}
 \end{align}
-When $\pi'$ is as good as $\pi$ (\ie $V^{\pi} = V^{\pi'}$), the algorithm terminates. The policy $\pi$ is considered to be optimal.
+When $\pi'(s) = \pi(s) \quad \forall s \in \Sspace$ or $\pi'$ is as good as $\pi$ (\ie $V^{\pi} = V^{\pi'}$), the algorithm terminates. The policy $\pi'$ is considered to be optimal, then $\pi^{*} = \pi'$.
 \subsubsection{Value Iteration} \label{subsec:vi}
-The main drawback in policy iteration is that, for each policy evaluation performed, multiple iterations are required. If we assume to truncate the policy evaluation after just one application of the update rule, we obtain the value iteration. In value iteration, the value function at each step is updated for all $s \in \Sspace$ as follows:
-$$ V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big).
-$$
-Differently from policy iteration, we don't consider any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions computed converges to $V^{*}$ \todo{cit smth related to the convergence?} and the optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp} with $V^{*}$ instead of $V^{\pi}$.
+The main drawback in policy iteration is that, for each policy evaluation, multiple iterations of the updating rule (\ref{eq:updrule}) are required. If we truncate the policy evaluation after just one application of the updating rule, we obtain the value iteration. In value iteration, the value function at each step is updated for all $s \in \Sspace$ as follows:
+\begin{align} V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big). \end{align}
+Differently from policy iteration, we don't compute any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions converges to $V^{*}$ \todo{cit smth related to the convergence?} and the optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp}, with $V^{*}$ instead of $V^{\pi}$.
 
 \subsection{Uncomplete Knowledge of \ac{MDPs}}
+In many cases, however, it is not possible to apply \ac{DP}. Some alternatives are introduced below for sake of completeness. We don't detail these methods because they are not related to our work.  
 
 \subsubsection{Tabular Alternatives to \ac{DP}}\label{subsec:alt}
-If we don't have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the interaction agent-environment at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. We don't detail these algorithms since they are not involved in our work.
+If we don't have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the interaction agent-environment at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. 
 
 \subsubsection{Approximate Solution Methods}
-The methods present until now are not suitable to solve \ac{RL} problems that involve a larger state space. In these problems we cannot expect to obtain the optimal policy, our goal is to find a good approximate solution using limited computational resources. If we consider a continuous state space, it's very probable that the agents always visits states never seen before. Then, we need to generalize the experience we gather from a subset of states to all the state space. The generalization comes up in the form of \emph{function approximation}. In function approximation, the value function is not representable in a tabular form, instead of a table it is used a function estimated from samples.\\
+The methods present so far are not suitable to solve \ac{RL} problems that involve a larger state space. In these problems we cannot expect to obtain the optimal policy, our goal is to find a good approximate solution using limited computational resources. In an environment with a continuous state space $\Sspace$, the agent will always visit states $s$ never seen before. Then, the experience we gather gives information on a subset of states but we need to generalize it to all the state space $\Sspace$. The generalization comes up in the form of \emph{function approximations}. These functions are estimated from samples and approximate value functions of continuous state space $\Sspace$ in place of tables.\\
 \newline
-There are several methods that rely on value function approximation to provide a solution of \ac{RL} problem. However function approximation arises new issues. First of all, convergence assurances are not easy to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the convergence to a local optimum, this is not the case when $\EV[U_t|S_t = s] = V^{\pi}(S_t)$. \todo{complex neural networks as approximate value fun?}
+Several methods rely on value function approximation in order to provide the solution of \ac{RL} problem. However, function approximation arises new issues. First of all, convergence assurances are difficult to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the method to converge to a local optimum. \todo{too complex functions as neural networks with a lot of parameters as approximate value fun?}
 
 \section{Policy Search}\label{sec:ps}
 In contrast to value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta} \in \Pi^{\theta}$. They directly operate in the parameter space $\Theta, \theta \in \Theta$ to find the optimal parametrized policy and typically avoid learning a value function. \ac{PS} copes with high dimensional state and action spaces and offers better convergence assurances than methods that involve function approximation. They have been found to be suitable in robotic applications. Most of the \ac{PS} algorithms are \emph{model-free} (\ie they don't require a representation of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly from the sampled trajectories, an exploration strategy is used to generate trajectories. Exploration can be performed in the action space or in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. Also the parameters that define the exploration distributions can be updated: usually the exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
