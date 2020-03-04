@@ -122,9 +122,9 @@ where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\
 \subsection{Policy Gradient}
 The most important class of algorithms in \ac{PS} is the one in which the algorithms learn the parameterized policy $\pi_{\theta}, \theta \in \mathbb{R}^d$ based on the gradient of some scalar performance measure $J(\theta)$ with respect to the policy parameter $\theta$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
 \begin{align}
-\theta \leftarrow \theta + \alpha \widehat{\nabla J(\theta)}, \label{eq:grad}
+\theta \leftarrow \theta + \alpha \widehat{\nabla J}(\theta), \label{eq:grad}
 \end{align}
-where $\widehat{\nabla J(\theta)} \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size, a scalar that controls the size of each update and can change through time. In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\theta \in \mathbb{R}^d \quad \forall s \in \Sspace, \forall a \in \Aspace$.\\
+where $\widehat{\nabla J}(\theta) \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\theta$ and $\alpha$ is the step size, a scalar that controls the size of each update and can change through time. In policy gradient methods, the policy $\pi(a|s,\theta)$ has to be differentiable with respect to its parameters $\theta \in \mathbb{R}^d \quad \forall s \in \Sspace, \forall a \in \Aspace$.\\
 \newline
 With policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas for \emph{greedy policies} (\ie policies that select the action to be performed in any state as the one having the highest value according to some value functions) the action probabilities may change enormously for a small change in the estimated action values. Stronger convergence guarantees are available for policy-gradient methods and approximate gradient ascent can be performed [\ref{eq:grad}]. According to [\cite{Peters2008ReinforcementLO}], if the gradient estimate is unbiased and learning rates fulfill
 \begin{align}\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty\end{align} \todo{sightly different from the citation}
@@ -132,40 +132,44 @@ the learning process is guaranteed to converge to at least a local optimum. Poli
 \newline
 Some methods also learn approximation to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function. In these methods, the function approximation for value function introduces bias but reduces variance and accelerates learning.
 
-\subsection{Policy Gradient Theorem}
+\subsection{Policy Gradient Theorem} \label{subsec:pgt}
 It may seem challenging to change the policy parameter in a way that ensures improvement. The problem is that the performance $J(\theta)$, \ie the measure to maximize, depends on both the action selections and the distribution of states in which those selctions are made, and both of these are affected by the policy parameter $\theta$. We have to estimate the performance gradient with respect to $\theta$ but the gradient is affected by the unknown effect of policy changes. Fortunately, there is a theoretical answer to this challenge in the form of the \emph{policy gradient theorem}, which provides an analytic expression for $\nabla_{\theta}J(\theta)$ that does not involve the derivative of the state distribution $\delta^{\theta}(s)$.\\
 \newline
 The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the case of continuous state space $\Sspace$ and action space $\Aspace$:
 \begin{align}
 \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) Q^{\theta}(s,a) \de a \de s. \label{eq:pgt}
 \end{align}
-Starting from~\eqref{eq:pgt}, the performance gradient $\nabla_{\theta}J(\theta)$ can be estimated from samples in different ways. The estimated value is exactly the value used in~\eqref{eq:grad} to perform an update iteration of the policy parameter $\theta$.
+Starting from~\eqref{eq:pgt}, the performance gradient $\nabla_{\theta}J(\theta)$ can be estimated from samples in different ways. In \mySubsec{subsec:alg} we present some policy gradient algorithms. Generally, a batch of $N$ trajectories is sampled and $N$ single estimates of gradient are averaged to obtain the final estimate. This estimate is the $\widehat{\nabla J}(\theta)$ used in~\eqref{eq:grad} to perform an iteration that updates the policy parameter $\theta$.
 
-\subsection{Policy Gradient Algorithms} \todo{QUESTA SEZIONE DEVE ESSERE SISTEMATA!!!}
-In this section we present some important algorithms and we show their property that are interesting to compare these existing algorithms with our work.
-\subsubsection{REINFORCE}
-According to [\citet{Williams1992SimpleSG}] it is possible to estimate the gradient from a single trajectory: we replace in~\eqref{eq:pgt} the integral over $a$ with an expectation under $\pi$, and then sampling the expectation:
+\subsection{Policy Gradient Algorithms} \label{subsec:alg}
+In this section we present some policy gradient algorithms that have some interesting properties for our work. We compare these existing algorithms and their properties with the algorithm proposed in our work. The first algorithm presented is REINFORCE [\ref{subsec:rein}], a method directly derived from the Policy Gradient Theorem [\mySubsec{subsec:pgt}] that shows how the gradient of performance can be easily estimated from samples. Then, we present two method that learn deterministic policies. The difference between these two methods is the way in which exploration is performed: in \acf{PGPE} [\ref{subsec:pgpe}] exploration is performed in the policy space while in \acf{DPG} [\ref{subsec:dpg}] exploration is performed by a behavioural policy (\ie a policy that collects samples, different from the policy that will be learnt).
+
+\subsubsection{REINFORCE} \label{subsec:rein}
+In REINFORCE the gradient of performance $\nabla_{\theta}J(\theta)$ can be estimated from a single trajectory $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$ without that any sort of perturbation is performed on parameters $\theta$, according to [\citet{Williams1992SimpleSG}]. Starting from~\eqref{eq:pgt}, we can write the gradient as an expected value depending on the state distribution $\delta^{\theta}$ and the parameterized policy $\pi_{\theta}$. Then, the samples collected following $\pi_{\theta}$ can be used for the estimate of $\nabla_{\theta}J(\theta)$: 
 \begin{align}
 \nabla_{\theta}J(\theta) &= \int_s \delta^{\theta}(s) \int_a \pi(a|s) \frac{\nabla_{\theta} \pi(a|s)}{\pi(a|s)} Q^{\theta}(s,a) \de a \de s \nonumber\\
 &= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)} Q^{\theta}(s_t,a_t) \Big] \nonumber\\
-&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \nabla_{\theta} \log\pi(a_t|s_t) r_t(s_t, a_t) \Big] \label{eq:rein}
+&= \EV_{s_t \sim \delta^{\pi}, a_t \sim \pi} \Big[ \nabla_{\theta} \log\pi(a_t|s_t) Q^{\theta}(s_t,a_t) \Big] \label{eq:rein}
 \end{align}
-where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi(a_t|s_t) = \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)}$ and $r_t(s_t, a_t) = \sum_{j = t}^T \gamma^{j-t} R(s_j, a_j)$.\\
+where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi(a_t|s_t) = \frac{\nabla_{\theta} \pi(a_t|s_t)}{\pi(a_t|s_t)}$ and $Q^{\theta}(s_t, a_t)$ can be approximated by a function.\\
 \newline
-From~\eqref{eq:pgt} we observe that if $b(s)$ does not depend on $a$ we can write:
-$$ \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) -b(s) \Big) \de a \de s. $$
-Indeed: $\int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0.$
-$b(s)$ is called baseline and allows to reduce the variance of the estimate, that considerably slow the convergence of the algorithm.
-\todo{spiegare come vengono considerate somme/medie degli step della traiettoria}
-A common baseline used is:
-$$ b_k^h = \frac{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2r_k \Big\rangle}{\Big\langle\Big( \sum_{k=0}^{K}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2\Big \rangle}
-$$
-and $Q^{\theta}(s,a)$ is replaced with:
-$$ g_h = \Big\langle \sum_{l=0}^{H} \Big( \sum_{k=0}^{l} \nabla_{\theta} \log \pi^{\theta}(a_k|s_k)\Big)(r_l - b_l^h)\Big\rangle.
-$$
-This is one of the most common policy gradient algorithms and we use it in our work to set a comparison with a state of the art algorithm in policy search.
+REINFORCE has good theoretical convergence properties: by construction, the expected update computed at each iteration increases the performance. However, it presents ah high variance that slows the convergence process. In order to mitigate this problem, we consider \emph{baseline functions} $b: \Sspace \to \mathbb{R}$, \ie functions that don't depend on the action and can reduce variance in the estimate without introducing bias.
+Indeed, we observe that if $b(s)$ does not depend on $a$ we can modify~\eqref{eq:pgt} in the following way:
+\begin{align} \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) -b(s) \Big) \de a \de s. \label{eq:pgtbase}\end{align}
+The new term appearing in~\eqref{eq:pgtbase} doesn't affect the value of gradient:
+\begin{align} \int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0. \end{align}
+An intuitive baseline $b(s)$ that can be used is the value function $V^{\theta}(s)$. In some tasks, $Q^{\theta}(s,a)$ can assume high values and the use of $V^{\theta}(s)$ as baseline provides an effect of normalization. The difference in expression~\eqref{eq:pgtbase} has the meaning of advantage function $A^{\theta}(s,a)$:
+\begin{align} \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) - V^{\theta}(s) \Big) \de a \de s.\end{align}
+In practice, the value functions $Q^{\theta}$ and $V^{\theta}$ are not available and have to be estimated. In episodic tasks, the return $G_t$ can be computed from every time step $t$, then a value $Q(s_t, a_t)$ can be assigned to every state-action pair $(s_t, a_t)$ sampled in the trajectory. As a result, starting from a trajectory $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$ terminating in time step $T$, the gradient of performance is estimated as:
+\begin{align}
+\widehat{\nabla_{\theta}J}(\theta) = \sum_{k=0}^{T-1} \nabla_{\theta}\log\pi_{\theta}(a_k|s_k)\Big(\sum_{l=k+1}^{T}\gamma^{l-1}r_{l} - b_{l} \Big),
+\end{align}
+where the variance-minimizing baseline [\cite{Peters2008ReinforcementLO}] is:
+\begin{align} b_l = \frac{\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2 \gamma^{l-1}r_l} {\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2}
+\end{align}
+This is one of the most common policy gradient algorithms and we use it in our work to compare our algorithm with a standard algorithm in policy search.
 
-\subsubsection{PGPE}
+\subsubsection{PGPE} \label{subsec:pgpe}
 \todo{spiegare (anche prima) likelihood gradient}
 \acf{PGPE}[\citet{sehnke2008PolicyGradient}] estimates a likelihood gradient by sampling directly in parameter space, which reduces the variance of estimates compared to REINFORCE. This is due to the fact that once parameters are sampled, we can generate an entire action-state history (trajectory) while in REINFORCE we draw the action from the policy at each time step.\\
 \newline
@@ -174,7 +178,7 @@ $$ \pi^{\theta}(a|s) = \int_{\Theta} p(\theta) \delta_{\mu^{\theta}(s)}\de \thet
 $$
 where $\delta_{\mu^{\theta}(s)}$ is the Dirac delta function of a deterministic policy $\mu^{\theta}$ depending on parameter $\theta$ weighted for a distribution $p(\theta)$.
 
-\subsubsection{DPG}
+\subsubsection{DPG} \label{subsec:dpg}
 \acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
 \newline
 Policy gradient algorithms are perhaps the most popular class of continuous action reinforcement learning algorithms, starting from the results obtained by the \emph{policy gradient theorem}, we consider a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[r(s, \mu_{\theta}(s))]$. 
@@ -292,6 +296,6 @@ These assumptions are enough to guarantee the continuity of the value functions 
 	where $L_{\delta^{\vtheta}} = {\gamma L_{P}L_{\pi_{\vtheta}}}\big/{\left(1-\gamma L_{P}(1+L_{\pi_{\vtheta}})\right)}$.
 \end{lemma}
 
-\section{Safe Reinforcement Learning}\label{sec:saferl}
+\section{Safe \NoCaseChange{\ac{RL}}}\label{sec:saferl}
 
 \section{State discretization} \label{sec:stdisc}
