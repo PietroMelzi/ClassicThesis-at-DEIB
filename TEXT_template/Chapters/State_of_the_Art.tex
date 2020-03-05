@@ -135,8 +135,8 @@ Some methods also learn approximation to value-functions and are called \emph{ac
 \subsection{Policy Gradient Theorem} \label{subsec:pgt}
 It may seem challenging to change the policy parameter in a way that ensures improvement. The problem is that the performance $J(\theta)$, \ie the measure to maximize, depends on both the action selections and the distribution of states in which those selctions are made, and both of these are affected by the policy parameter $\theta$. We have to estimate the performance gradient with respect to $\theta$ but the gradient is affected by the unknown effect of policy changes. Fortunately, there is a theoretical answer to this challenge in the form of the \emph{policy gradient theorem}, which provides an analytic expression for $\nabla_{\theta}J(\theta)$ that does not involve the derivative of the state distribution $\delta^{\theta}(s)$.\\
 \newline
-The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the case of continuous state space $\Sspace$ and action space $\Aspace$:
-\begin{align}
+The theorem is from [\citet{Sutton1999PolicyGM}] and we enunciate it in the case of continuous state space $\Sspace$ and action space $\Aspace$:\todo{scrivere come teorema}
+\begin{align} 
 \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) Q^{\theta}(s,a) \de a \de s. \label{eq:pgt}
 \end{align}
 Starting from~\eqref{eq:pgt}, the performance gradient $\nabla_{\theta}J(\theta)$ can be estimated from samples in different ways. In \mySubsec{subsec:alg} we present some policy gradient algorithms. Generally, a batch of $N$ trajectories is sampled and $N$ single estimates of gradient are averaged to obtain the final estimate. This estimate is the $\widehat{\nabla J}(\theta)$ used in~\eqref{eq:grad} to perform an iteration that updates the policy parameter $\theta$.
@@ -170,7 +170,7 @@ where the variance-minimizing baseline [\cite{Peters2008ReinforcementLO}] is: \t
 This is one of the most common policy gradient algorithms and we use it in our work to compare our algorithm with a standard algorithm in policy search.
 
 \subsubsection{PGPE} \label{subsec:pgpe}
-\acf{PGPE}[\citet{sehnke2008PolicyGradient}] is a method that estimates a gradient by directly sampling in parameter space. In \ac{PGPE} the policy is defined by a distribution over the parameters of deterministic controllers that we indicate with the function $\mu_{\theta}: \Sspace \to \Aspace$. At the beginning of each step, the parameter $\theta$ of the controller is sampled and then, the deterministic policy $\mu_{\theta}$ generated from $\theta$ is followed for all the episode length.\\
+\acf{PGPE}[\citet{sehnke2008PolicyGradient}] is a method that estimates a gradient by directly sampling in parameter space. In \ac{PGPE} the policy is defined by a distribution over the parameters of deterministic controllers that we indicate with the function $\mu_{\theta}: \Sspace \to \Aspace$. At the beginning of each step, the parameter $\theta$ of the controller is sampled and then, the deterministic policy $\mu_{\theta}$ generated from $\theta$ is followed for all the episode length. Even if samples are collected with a detrministic policy, the choice of the policy is stochastic and then unexpected behaviour could arise in the task.\\
 \newline
 The variance of the estimates obtained with \ac{PGPE} is lower than the variance of the estimates obtained with REINFORCE. This is due to the fact that, in REINFORCE, a repetitive sampling from a stochastic policy injects noise in the gradient estimate at every time-step. Furthemore, the variance increases linearly with the length of the history since each state depends on the entire sequence of previous samples.\\
 \newline
@@ -191,18 +191,20 @@ From \ref{eq:pgpej}, we can write the expected value of the gradient of $J$ \wrt
 where $\theta$ is sampled at the beginning of the episode and $h$ is resulting from the deterministic controller $\mu_{\theta}$. Usually, we can consider the parameter $\rho$ learnt by the algorithm as $\rho = \Big( \{\mu_i\}, \{\sigma_i\} \Big)$, where $\mu_i$ and $\sigma_i$ are the parameters that determine an indipendent normal distribution $p_{\rho_i}(\theta)$ for each parameter $\theta_i \in \Theta$.  
 
 \subsubsection{DPG} \label{subsec:dpg}
-\acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy. This is similar to what we want to achieve but the problem is that during the learning phase \ac{DPG} collect samples from a stochastic behavioural policy and then unexpected actions can be performed.\\
+\acf{DPG} [\citet{article}] is a class of algorithms that learn a parametric deterministic policy $\mu_{\theta}$ defined as $\mu_{\theta}: S \mapsto A$. The approach in \ac{DPG} is similar to the one used in policy gradient methods that learn stochastic policies $\pi_{\theta}$, where the gradient of performance is estimated according to the Policy Gradient Theorem (\ref{subsec:pgt}). However, for deterministic policies the gradient of performance is slightly different than the one computed by the theorem (\ref{eq:pgt}).\\
 \newline
-Policy gradient algorithms are perhaps the most popular class of continuous action reinforcement learning algorithms, starting from the results obtained by the \emph{policy gradient theorem}, we consider a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[r(s, \mu_{\theta}(s))]$. 
-By applying the chain rule we see that the policy improvement may be decomposed:
-$$
-\nabla_{\theta} Q^{\mu}(s, \mu_{\theta}(s)) = \nabla_{\theta}\mu_{\theta}(s)\nabla_a Q^{\mu}(s, a)|_{a=\mu_{\theta}(s)}
-$$
-Suppose that $\nabla_{\theta}\mu_{\theta}(s)$ and $\nabla_aQ^{\mu}(s,a)$ exist, then:
-$$
-\nabla_{\theta}J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}} [\nabla_{\theta} \mu_{\theta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\theta} (s)}]
-$$
-We use the deterministic policy gradient theorem to derive an off-policy actor-critic algorithm. It learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q^{\mu}(s,a)$. 
+In order to ensure exploration while learning a deterministic policy $\mu_{\theta}$, it is introduced an \emph{off-policy} algorithm (\ie an algorithm in which the policy used for collecting samples, the \emph{behavioural policy} $\beta(a|s)$, is different from the policy learnt). Usually in off-policy algorithms, every expected value contains the \emph{importance sampling ratio} $\frac{\pi(a|s)}{\beta(a|s)}$ to adjust the fact that actions were selected with policy $\beta$ rather than policy $\pi$.\\
+\newline
+Both in our work and in \ac{DPG} we want to learn a deteministic policy, however during the learning phase \ac{DPG} collects samples from a stochastic behavioural policy, differently from what we are looking for.\\
+\newline
+Similarly to (\mySubsec{subsec:pgt}) but considering a deterministic policy $\mu_{\theta}: S \mapsto A$ with parameter vector $\theta \in \mathbb{R}^n$ and performance objective $J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}}[R(s, \mu_{\theta}(s))]$, the expression for \emph{Deterministic Policy Gradient} is derived:
+\begin{theorem}[Deterministic Policy Gradient Theorem] \label{th:dpgt}
+	Suppose that $P(s'|s,a), \nabla_aP(s'|s,a), \mu_{\theta}(s), \nabla_{\theta} \mu_{\theta}(s), R(s,a), \nabla_a R(s,a), \mu(s)$ \todo{mu usato per distribuzione iniziale degli stati e per policy deterministiche: correggere!!!!} are continuous in all parameters and variables $s, a, s'$.\todo{x variable in Sutton appendix?} Then, 
+	\begin{align}
+	\nabla_{\theta}J(\mu_{\theta}) = \mathbb{E}_{s \sim \delta^{\mu}} \Big[\nabla_{\theta} \mu_{\theta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\theta} (s)}\Big].
+	\end{align}
+\end{theorem}
+\noindent We use the theorem \ref{th:dpgt} to derive an off-policy actor-critic algorithm that learns a deterministic target policy $\mu_{\theta}(s)$ from trajectories generated by an arbitrary stochastic behaviour policy $\pi(a|s)$. A critic estimates the action-value function $Q^w(s,a) \approx Q_{\mu}(s,a)$, where $w$ is the parameter of the function approximator $Q^w(s,a)$. In [\citet{article}] the conditions required for a function approximator to be compatible (\ie avoid to introduce any bias in gradient update) are specified.
 
 \section{Special \NoCaseChange{\ac{MDPs}}} \label{sec:specmdp}
 In this section we present two types of \ac{MDPs} not so common in literature, that allows us to represent some properties of interest for the \ac{MDPs} considered in the work.
@@ -310,5 +312,17 @@ These assumptions are enough to guarantee the continuity of the value functions 
 \end{lemma}
 
 \section{Safe \NoCaseChange{\ac{RL}}}\label{sec:saferl}
+We consider learning in MDPs, there exist two main trends for Safe RL. The first one is based on the modification of the optimality criterion to introduce the concept of risk. The second is based on the modification of the exploration process to avoid the exploratory actions that can lead the learning system to undesirable or catastrophic situations. As regard the first, there are several alternatives in order to consider risk:
+\begin{itemize}
+	\item Worst Case Criterion: a policy is considered to be optimal if it has the maximum worst-case return. This criterion is used to mitigate the effects of the variability induced by a given policy.
+	\item Risk-Sensitive Criterion: the optimization criterion balances the return and the risk. A parameter allows the sensitivity to the risk to be controlled, risk can be defined as the variance of return or as the probability of entering into an error state.
+	\item Constrained Criterion: it maximizes the return subject to one or more constraints.
+\end{itemize}
+As regard the modification of the exploration process, it can be modified through the incorporation of external knowledge. There are three ways of doing this:
+\begin{itemize}
+	\item Providing Initial Knowledge: examples gathered from a teacher or previous information on the task can be used to provide initial knowledge for the learning algorithm.
+	\item Deriving a policy from a finite set of demonstrations: a set of examples provided by a teacher can be used to learn a model from which to derive a policy in an off-line and, hence, safe manner.
+	\item Providing Teach Advice: a human or a simple controller assists the exploration during the learning process and provides advice.
+\end{itemize}
 
 \section{State discretization} \label{sec:stdisc}
