@@ -104,7 +104,7 @@ The methods present so far are not suitable to solve \ac{RL} problems that invol
 Several methods rely on value function approximation in order to provide the solution of \ac{RL} problem. However, function approximation arises new issues. First of all, convergence assurances are difficult to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the method to converge to a local optimum. \todo{too complex functions as neural networks with a lot of parameters as approximate value fun?}
 
 \section{Policy Search}\label{sec:ps}
-In contrast with value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta}$, where $\theta \in \Theta$. They directly operate in the parameter space $\Theta$ to find the optimal parametrized policy and typically avoid to learn a value function. \ac{PS} copes with high dimensional state space $\Sspace$ and action space $\Aspace$ and offers better convergence assurances compared to the methods that involve function approximation. Because of this, \ac{PS} methods have been found to be suitable in robotic applications.\\
+In contrast with value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta}$, where $\theta \in \Theta$. The set of parameter $\theta$ fixes in advance the candidate policies. They directly operate in the parameter space $\Theta$ (\ie in the class of candidate policies) to find the optimal parametrized policy and typically avoid to learn a value function. \ac{PS} copes with high dimensional state space $\Sspace$ and action space $\Aspace$ and offers better convergence assurances compared to the methods that involve function approximation. Because of this, \ac{PS} methods have been found to be suitable in robotic applications.\\
 \newline
 Most of the algorithms in \ac{PS} are \emph{model-free} (\ie they don't require a model of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly exploiting the sampled trajectories, hence it is important to define an exploration strategy that provides variety in trajectories. Exploration can be performed both in the action space and in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. The magnitude of noise present in any kind of exploration depends on some parameters. These parameters can also be updated by the algorithms: usually the size of exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
 
@@ -312,17 +312,44 @@ These assumptions are enough to guarantee the continuity of the value functions 
 \end{lemma}
 
 \section{Safe \NoCaseChange{\ac{RL}}}\label{sec:saferl}
-We consider learning in MDPs, there exist two main trends for Safe RL. The first one is based on the modification of the optimality criterion to introduce the concept of risk. The second is based on the modification of the exploration process to avoid the exploratory actions that can lead the learning system to undesirable or catastrophic situations. As regard the first, there are several alternatives in order to consider risk:
+In \ac{RL} several definitions of safeness have been proposed, and also methods that ensure a certain degree of safety according to some measure of risk. In this section, first we provide an overview of the different methods that face the problem of safely learning, using the same classification proposed by [\citeauthor{JMLR:v16:garcia15a}], then we focus on the more specific issue related to \emph{safe exploration}.\\
+\newline
+According to [\cite{JMLR:v16:garcia15a}], there exist two main trends for Safe \ac{RL}. The first one is based on the modification of the optimality criterion to introduce the concept of risk. The second is based on the modification of the exploration process, so as to avoid the exploration of actions that may lead the system to undesirable or catastrophic situations . As regard the first trend, there are several alternatives to quantify risk:
 \begin{itemize}
-	\item Worst Case Criterion: a policy is considered to be optimal if it has the maximum worst-case return. This criterion is used to mitigate the effects of the variability induced by a given policy.
-	\item Risk-Sensitive Criterion: the optimization criterion balances the return and the risk. A parameter allows the sensitivity to the risk to be controlled, risk can be defined as the variance of return or as the probability of entering into an error state.
-	\item Constrained Criterion: it maximizes the return subject to one or more constraints.
+	\item \emph{Worst Case Criterion}: a policy is considered to be optimal if it has the maximum worst-case return:
+	\begin{align}
+	\max_{\pi \in \Pi}\min_{w \in \Omega^{\pi}} \EV_{\pi, w}(G_{0}),
+	\end{align}
+	where $\Omega^{\pi}$ is a set of trajectories that occurs under the policy $\pi$ and the quantity to maximize-minimize is an expectation value \wrt the policy $\pi$ and the trajectory $w$.	This criterion is used to mitigate the effects of variability induced by a given policy. It is also possible to use the criterion when the transition functions $P$ is uncertain:
+	\begin{align}
+	\max_{\pi \in \Pi}\min_{P} \EV_{\pi, P}(G_{0}),
+	\end{align}
+	\item \emph{Risk-Sensitive Criterion}: the optimization criterion balances return and risk by means of a scalar parameter that is included in the objective function and allows the sensitivity to the risk to be controlled. Risk can be defined as the variance of return or as the probability of entering into an error state.
+	\item \emph{Constrained Criterion}: the method maximizes the return subject to one or more constraints.
 \end{itemize}
-As regard the modification of the exploration process, it can be modified through the incorporation of external knowledge. There are three ways of doing this:
+As regard the modification of the exploration process, it can be modified through the incorporation of external knowledge in three different ways:
 \begin{itemize}
-	\item Providing Initial Knowledge: examples gathered from a teacher or previous information on the task can be used to provide initial knowledge for the learning algorithm.
-	\item Deriving a policy from a finite set of demonstrations: a set of examples provided by a teacher can be used to learn a model from which to derive a policy in an off-line and, hence, safe manner.
-	\item Providing Teach Advice: a human or a simple controller assists the exploration during the learning process and provides advice.
+	\item \emph{Providing Initial Knowledge}: examples gathered from a teacher or previous information on the task can be used to provide an initial knowledge for the learning algorithm. From the ealier steps of the algorithm, the most relevant regions of the state and action spaces are visited. It considerably reduces random exploration.
+	\item \emph{Deriving a policy from a finite set of demonstrations}: a set of examples provided by a teacher, that replace examples provided by exploration, can be used to learn a model from which to derive a policy in an off-line and, hence, safe manner.
+	\item \emph{Providing Teach Advice}: a human or a simple controller assists the exploration during the learning process and provides advice. In some approaches, the teacher can provide advice only when the agent explicitly asks for, in others whenever it feels it necessary. 
 \end{itemize}
+
+\subsection{Safe Exploration}
+In our work, it is fundamental to ensure the agent learns in complete safety (\ie the agent doesn't perform undesired actions throughout the learning phase). The second class of safe methods is suitable for this, however it requires an external knowledge, in the form of samples or a teacher, that is not always available. Instead, the methods of the first class can learn an optimal policy (according to a definition of return that includes risk) but they trade-off short term loss in performance for a long term gain. This is not accettable in the case of safety critical applications because the risk is encoded in the reward function. This problem is known as policy oscillation, it can cause failure or harm the environment. Here we describe two state of the art approaches to safe exploration, the first one for finite \ac{MDPs} (\mySubsec{subsec:fmdp}) and the second one for policy gradient methods (\mySubsec{subsec:safepg}).
+
+\subsubsection{Safe Exploration in Finite \ac{MDPs}} \label{subsec:fmdp}
+[\cite{turchetta2016}] addresses the problem of safely exploring finite \ac{MDPs}, where safety is defined in terms of a constraint that satisfies regularity conditions. The algorithm, called SafeMDP, cautiously explores safe states and actions, obtains noisy observations and gains knowledge on the safety of unvisited state-action pairs.
+Starting from a set of states and actions that are known to be safe, the regularity assumptions are exploited in order to evaluate only state-action pairs known to fulfill the safety constraint.
+The reward (encoding a measure of safeness) is unknown and drawn from a gaussian distributions, at each iteration of the algorithm a posterior distribution is computed from the sampled rewards, affected by an additive noise drawn from a zero-mean gaussian distribution. The reward function $R(s)$ is Lipschitz continue, according to a Lipschitz constant $L_{R}$. Since only noisy measurements are observed, $R(s)$ is known up to some statistical confidence $\epsilon$. By considering the Lipschitz continuity of $R(s)$ and the confidence $\epsilon$ and starting from some safe set $\Sspace_s$, the resulting set of safe state is:
+\begin{align}
+R_{\epsilon}^{safe}(\Sspace_s) = \Sspace_s \cup \{s \in \Sspace | \exists s' \in \Sspace_s: R(s') - \epsilon - L_{R} d(s, s') \geq h\}, \label{eq:safe}
+\end{align}
+where $h$ represents a safety threshold. The obtained set is then restricted by considering only the safe states that are reachable and from which we can move to other safe states.
+By iteratively applying the operator $R_{\epsilon}^{safe}$ in (\ref{eq:safe}) to the restricted set of safe states $\Sspace_s$ and updating the gaussian distribution of $R(s)$ from samples, we obtain the largest set of states that can be safely reached from the exploring agent.
+
+\subsubsection{Safe Policy Gradients} \label{subsec:safepg}
+\acf{SPG} is an algorithm from [\cite{papini2019}] in which the learning agent is constrained to never worsen its performance during learning. According to the classification of safe \ac{RL} methods, the algorithm follows the \emph{constrained criteria}, oscillating performances may violate the constraint, said \emph{Monotonic Improvement}. Actor-only policy gradient from a stochastic optimization perspective algorithms and \emph{smoothing policies}, \ie policies for which the Lipschitz assumptions hold, are considered. From upper bounds on the variance of policy gradient estimators, a lower bound on the performance improvement (with a certain confidence) provided by gradient-based updates is calculated and expressed as a function of some meta-parameters. These meta-parameters are the step size $\alpha$ of the parameter updates and the batch size $N$ of the gradient estimators. Then, the meta-parameters that guarantee monotonic improvement with high probability are identified.\\
+\newline 
+Policy gradient methods may suffer from the explosion of gradients when the current policy is close to deterministic, leading to unstable training process. \acf{TDL} [\cite{DBLP:journals/corr/abs-1905-11041}] addresses this problem, it alternates between proposing a target distribution and training the policy to approach the target distribution. The target policy is the solution of a constrained optimization problem where the constraints involve the difference between updated policies, so that the algorithm leads to more stable improvements.
 
 \section{State discretization} \label{sec:stdisc}
