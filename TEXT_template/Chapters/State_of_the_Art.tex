@@ -7,14 +7,15 @@ According to [\cite{sutton2018reinforcement}], \acf{RL} consists in learning wha
 \section{\NoCaseChange{\acf{MDPs}}}\label{sec:mdp}
 \ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time.
 \begin{definition}[MDP]\label{def:mdp}
-The \ac{MDP} is described by a five-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma \rangle$, where:
+The \ac{MDP} is described by a six-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma, \mu \rangle$, where:
 \begin{itemize}
 	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
 	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$.
 	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$. $P(.|s,a)$ is a distribution of probability on the arriving state, then for any state-action pair $(s,a)$, the following equality holds:
 	\begin{align} \sum_{s' \in \Sspace} P(s'|s,a) = 1. \end{align}
-	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$.
+	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$. Usually the reward function is bounded with a finite value $R$ such that $R = \sup_{(s,a) \in \Sspace \times \Aspace} R(s,a)$.
 	\item $\gamma \in [0, 1)$ is the discount factor, eventually used to discount the present effect of future rewards.
+	\item $\mu \in \Delta(\Sspace)$ is the initial-state distribution.
 \end{itemize}
 \end{definition}
 \noindent The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.\\
@@ -47,6 +48,9 @@ and represents the probability of being in a certain state $s$ during the execut
 \newline
 The performance measure is used to identify the optimal policy $\pi^{*}$ that we want to learn in the \ac{RL} problem as:
 \begin{align} \pi^{*} \in \arg \max_{\pi} J(\pi). \end{align}
+
+\subsection{Exploration in \ac{RL}}
+\ac{RL} algorithms require exploration to learn the optimal policy $\pi^{*}$. Exploration is provided by the agent that evolves in the \ac{MDP} according to the current policy $\pi$ and collects information about states, actions and rewards at each time step $t$, until the horizon $T$ of the episode. All the information gathered by the agent in the episode is represented by a tuple called \emph{trajectory}: $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$, where $s_{0} \sim \mu$, $a_{t} \sim \pi(\cdot|s_{t})$, $r_{t} = R(s_{t}, a_{t})$, $s_{t+1} \sim P(\cdot|s_{t}, a_{t})$. Usually, the agent collects a \emph{batch} of $N$ different trajectories with the same policy $\pi$ before updating it. The number $N$ of trajectories is called \emph{batch size}.
 
 \section{Tabular Solution Methods}\label{sec:tabmet}
 Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}, a subset of the \ac{MDPs} defined in \ref{def:mdp}. In order to reason with finite \ac{MDPs}, we consider the state space $\Sspace$ and the action space $\Aspace$ as finite sets of discrete values and we replace all the integrals appearing in the expressions reported so far with summations. The methods used to solve problems involving finite \ac{MDPs} are called \emph{tabular} because the state space $\Sspace$ and the action space $\Aspace$ are small enough for the value functions to be represented in a tabular format.\\
@@ -104,7 +108,7 @@ The methods present so far are not suitable to solve \ac{RL} problems that invol
 Several methods rely on value function approximation in order to provide the solution of \ac{RL} problem. However, function approximation arises new issues. First of all, convergence assurances are difficult to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the method to converge to a local optimum. \todo{too complex functions as neural networks with a lot of parameters as approximate value fun?}
 
 \section{Policy Search}\label{sec:ps}
-In contrast with value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta}$, where $\theta \in \Theta$. The set of parameter $\theta$ fixes in advance the candidate policies. They directly operate in the parameter space $\Theta$ (\ie in the class of candidate policies) to find the optimal parametrized policy and typically avoid to learn a value function. \ac{PS} copes with high dimensional state space $\Sspace$ and action space $\Aspace$ and offers better convergence assurances compared to the methods that involve function approximation. Because of this, \ac{PS} methods have been found to be suitable in robotic applications.\\
+In contrast with value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta}$, where $\theta \in \Theta$. The set of parameter $\theta$ fixes in advance the candidate policies, \ie the class $\Pi_{\Theta} = \{ \pi_{\theta} | \theta \in \Theta \}$. \ac{PS} methods directly operate in the parameter space $\Theta$ (\ie in the class of candidate policies) to find the optimal parametrized policy and typically avoid to learn a value function. \ac{PS} copes with high dimensional state space $\Sspace$ and action space $\Aspace$ and offers better convergence assurances compared to the methods that involve function approximation. Because of this, \ac{PS} methods have been found to be suitable in robotic applications.\\
 \newline
 Most of the algorithms in \ac{PS} are \emph{model-free} (\ie they don't require a model of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly exploiting the sampled trajectories, hence it is important to define an exploration strategy that provides variety in trajectories. Exploration can be performed both in the action space and in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. The magnitude of noise present in any kind of exploration depends on some parameters. These parameters can also be updated by the algorithms: usually the size of exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
 
@@ -117,7 +121,7 @@ Stochastic policies randomize over actions. In continuous settings, this is typi
 \newline
 A common parametrization for countinuous actions represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a scalar action, with mean $\mu$ and standard deviation $\sigma$ given by parametric function approximators that depend on the state:
 \begin{align} \pi_{\theta}(a|s) = \frac{1}{\sigma(s, \theta)\sqrt{2\pi}}exp\Big( -\frac{(a -\mu(s, \theta))^2}{2\sigma(s, \theta)^2}\Big), \end{align}
-where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$.
+where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$. \todo{aggiuingere softmax}
 
 \subsection{Policy Gradient}
 The most important class of algorithms in \ac{PS} is the one in which the algorithms learn the parameterized policy $\pi_{\theta}, \theta \in \mathbb{R}^d$ based on the gradient of some scalar performance measure $J(\theta)$ with respect to the policy parameter $\theta$. These methods seek to maximize performance, so their updates approximate gradient ascent in J:
