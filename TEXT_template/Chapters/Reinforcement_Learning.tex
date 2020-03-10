@@ -1,0 +1,260 @@
+\chapter{Reinforcement Learning} \label{chap:rl}
+
+According to [\cite{sutton2018reinforcement}], \acf{RL} consists in learning what to do so as to maximize a numerical reward signal. The learner must discover which actions yield the most reward by trying them. Actions may affect not only the immediate reward but also the next situation and all subsequent rewards. The problem of \ac{RL} is formalized with an idea coming from dynamical systems theory, specifically with the \acf{MDPs} that we detail in \mySec{sec:mdp}.\\
+\newline
+\MyChap{chap:stateoftheart} provides a strong theoretical contribution to our work. After the introduction on \ac{MDPs} in \mySec{sec:mdp}, \mySec{sec:tabmet} refers to the \emph{Tabular Methods} used to solve \ac{MDPs}. Even if the application of these methods is limited by computational costs, they provides basic concepts in \ac{RL}. \MySec{sec:ps} explores \emph{\acf{PS}}, a class of methods that solve \ac{RL} problems with a different approach. \ac{PS} offers several advantages in the robotic field. Then, we present two special types of \ac{MDPs} in \mySec{sec:specmdp}: \emph{Bounded \ac{MDPs}}, suitable to model uncertainty in the environment, and \emph{Lipschitz \ac{MDPs}}, suitable to model regularity in the environment. Finally, \mySec{sec:saferl} presents some existing approaches to the safety issue in \ac{RL} and \mySec{sec:stdisc} presents some topics related to state discretization.
+
+\section{\NoCaseChange{\acf{MDPs}}}\label{sec:mdp}
+\ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values, the agent aims to maximize the sum of them over time.
+\begin{definition}[MDP]\label{def:mdp}
+The \ac{MDP} is described by a six-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma, \mu \rangle$, where:
+\begin{itemize}
+	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
+	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$.
+	\item $P: \Sspace \times \Aspace \to \Delta(\Sspace)$ is the transition function, with $P(s'|s,a)$ denoting the probability of reaching state $s'$ from state $s$ by taking action $a$. $P(.|s,a)$ is a distribution of probability on the arriving state, then for any state-action pair $(s,a)$, the following equality holds:
+	\begin{align} \sum_{s' \in \Sspace} P(s'|s,a) = 1. \end{align}
+	\item $R: \Sspace \times \Aspace \to \Reals$ is the reward function, with $R(s,a)$ denoting the expected reward from taking action $a$ in state $s$. Usually the reward function is bounded with a finite value $R$ such that $R = \sup_{(s,a) \in \Sspace \times \Aspace} R(s,a)$.
+	\item $\gamma \in [0, 1)$ is the discount factor, eventually used to discount the present effect of future rewards.
+	\item $\mu \in \Delta(\Sspace)$ is the initial-state distribution.
+\end{itemize}
+\end{definition}
+\noindent The transition function $P$ defines the dynamics of the \ac{MDP} and ensures the \emph{Markov property}: the probability of reaching $s_t$ depends only on the immediately previous state and action, $s_{t-1}$ and $a_{t-1}$, and not on earlier states and actions.\\
+\newline
+The interaction between agent and environment can be better explained with symbols: at each time step $t$ the agent receives a representation of the state $s_t \in \Sspace$, on that basis it selects an action $a_t \in \Aspace$. One time step later, the agent receives a reward $r_{t+1}$ and finds itself in a new state $s_{t+1} \in \Sspace$. We define the \ac{MDP} according to [\cite{puterman2014markov}]. In general, the state space $\Sspace$ and the action space $\Aspace$ can be finite or continuous sets. We focus on continuous set \ac{MDPs} as these are the most suitable for modeling continuous control problems.
+\subsection{Policy and Value Functions}
+The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto \Delta(\Aspace)$, \ie a mapping from states to probabilities of selecting each possible action. The agent learns a policy according to its goal of maximizing the sum of rewards collected during the task. Specific details on how to learn the optimal policies are given later, in \mySec{sec:tabmet} and \mySec{sec:ps}. The sum of rewards obtained by the agent, if we consider the time steps $k \in (t, T]$, where the time step $T$ represents the horizon of the task, is called \emph{return} $G_t$. In general, the return is defined as a sum of discounted rewards:
+\todo{Uso G come nome?}
+\begin{align}G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k, \end{align} where $r_k$ is the reward obtained at step $k$. The horizon $T$ can be finite or infinite. In the first case, the task is said to be \emph{episodic} and the agent-environment interaction breaks naturally into episodes. In the second case (\ie $T = \infty$), the task is said to be \emph{continuing} and a discount factor $\gamma<1$ is required in order to obtain a return $G_t < \infty$.\\
+\newline
+In this work, we denote with $\pi(a|s)$ the probability of performing the action $a$ in the state $s$, according to the policy $\pi$. Since $\pi(s)$ is a distribution of probability, the following equality holds:
+\begin{align} \sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace. \end{align}
+If, for each state $s \in \Sspace$, there exists an action $a$ such that $\pi(a|s) = 1$, the policy is deterministic.\\
+\newline
+Given a policy $\pi$, it is possible to compute the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$. This is a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$, according to the expected return obtainable from that state. Since the rewards that the agent can expect to receive in the future depend on the actions taken in any state, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: 
+\begin{align} V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a.\end{align}
+For control purposes, we can also define an action-value function $Q^{\pi}: \Sspace \times \Aspace \rightarrow \mathbb{R}$: \begin{align} Q^{\pi}(s,a) = R(s,a) + \gamma \int_{\Sspace} P(s'|s,a) \int_{\Aspace} \pi(a'|s') Q^{\pi}(s',a') \de a' \de s'.\end{align}
+$Q^{\pi}(s,a)$ represents the expected return obtained from taking the action $a$ in state $s$ and then following the policy $\pi$. \\
+\newline
+Finally, we denote with
+\begin{align} A^{\pi}(s,a) = Q^{\pi}(s,a) - V^{\pi}(s) \end{align}
+the advantage function of policy $\pi$, that represents the advantage in terms of value functions given by performing action $a$ in state $s$, instead of the action prescribed by $\pi(s)$.
+
+\subsection{Performance Measure}
+In order to evaluate how good a policy $\pi$ is, we consider the expected return obtained starting from a state $s \in \Sspace$ drawn from the initial-state distribution $\mu$ and following the policy $\pi$. The \emph{performance measure} $J(\pi)$ expressed in the form of an expected value is:
+\begin{align} {J(\pi) = \EV_{s_0\sim\mu}{G_0} \quad = (1 - \gamma)^{-1}\EV_{s\sim\delta^{\pi}, a \sim \pi}R(s,a)} \quad = \EV_{s\sim\mu}V^{\pi}(s), \end{align}
+where $\delta^{\pi}$ is the $\gamma$-discounted future-state distribution. This function is defined as:
+\begin{align} \delta^{\pi}(s) = (1 - \gamma)\EV_{s_{0}\sim\mu}\sum_{t=0}^{\infty}\gamma^t P^{\pi}(S_t = s|S_0=s_0) \end{align}
+and represents the probability of being in a certain state $s$ during the execution of the task, provided that the policy is $\pi$ and the initial state distribution is $\mu$.\\
+\newline
+The performance measure is used to identify the optimal policy $\pi^{*}$ that we want to learn in the \ac{RL} problem as:
+\begin{align} \pi^{*} \in \arg \max_{\pi} J(\pi). \end{align}
+
+\subsection{Exploration in \ac{RL}}
+\ac{RL} algorithms require exploration to learn the optimal policy $\pi^{*}$. Exploration is provided by the agent that evolves in the \ac{MDP} according to the current policy $\pi$ and collects information about states, actions and rewards at each time step $t$, until the horizon $T$ of the episode. All the information gathered by the agent in the episode is represented by a tuple called \emph{trajectory}: $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$, where $s_{0} \sim \mu$, $a_{t} \sim \pi(\cdot|s_{t})$, $r_{t} = R(s_{t}, a_{t})$, $s_{t+1} \sim P(\cdot|s_{t}, a_{t})$. Usually, the agent collects a \emph{batch} of $N$ different trajectories with the same policy $\pi$ before updating it. The number $N$ of trajectories is called \emph{batch size}.
+
+\section{Tabular Solution Methods}\label{sec:tabmet}
+Solving a \ac{RL} task means finding a policy that maximizes the return obtained by the agent in the task. First, we consider finite \ac{MDPs}, a subset of the \ac{MDPs} defined in \ref{def:mdp}. In order to reason with finite \ac{MDPs}, we consider the state space $\Sspace$ and the action space $\Aspace$ as finite sets of discrete values and we replace all the integrals appearing in the expressions reported so far with summations. The methods used to solve problems involving finite \ac{MDPs} are called \emph{tabular} because the state space $\Sspace$ and the action space $\Aspace$ are small enough for the value functions to be represented in a tabular format.\\
+\newline
+Policies can be partially ordered according to their value function: 
+\begin{align}
+\pi' \geq \pi \iff V^{\pi'}(s) \geq V^{\pi}(s) \quad \forall s \in \Sspace. \label{eq:ordpol}
+\end{align} 
+In finite \ac{MDPs}, there always exists a deterministic optimal policy $\pi^{*}$ such that $\pi^{*} \geq \pi \quad \forall \pi \in \Pi$, said $\Pi$ the set of policies. The value function $V^{*}$ computed according to $\pi^{*}$ has the following property:
+\begin{align} V^{*}(s) = \max_{\pi}V^{\pi}(s) \quad \forall s \in \Sspace. \end{align}
+Optimal value function $V^{*}$ and optimal action-value function $Q^{*}$ can be written with the Bellman optimality equations:
+\begin{align}
+V^{*}(s) &= \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)   V^{*}(s') \Big)\\
+Q^{*}(s,a) &= R(s,a) + \gamma \sum_{s'}P(s'|s,a) \max_{a'} Q^{*}(s', a').
+\end{align}
+If the agent has a \emph{complete knowledge} of the environment, \ie the agent knows the transition function $P$ and the reward function $R$ of the \ac{MDP} $M$ representing the environment, \acf{DP} can be used to solve the \ac{RL} problem. Details are provided in \mySubsec{subsec:dp}. Instead, if the agent has an \emph{incomplete knowledge} of the environment, the unknown functions $P$ and $R$ of \ac{MDP} $M$ can be estimated from experience. Details are provided in \mySubsec{subsec:alt}.\\
+\newline
+When the problems involve finite \ac{MDPs} with a larger state space or continuous \ac{MDPs}, tabular methods are no more suitable because value functions cannot be represented in tables. Two main approaches are possible:
+\begin{itemize}
+	\item the value functions can be estimated with \emph{function approximators} and used to solve the task;
+	\item the optimal policies can be directly searched in the space of policies, without the necessity of computing any value function. Details are provided in (\mySec{sec:ps}).
+\end{itemize}
+
+\subsection{Dynamic Programming}\label{subsec:dp}
+\acf{DP} is a collection of algorithms that can be used to compute optimal policies, given a model of the environment in the form of an \ac{MDP}. Since \ac{DP} is computationaly expensive and requires finite \ac{MDPs}, its utility in solving \ac{RL} problems is limited. However \ac{DP} provides strong foundation for understanding the following methods. \ac{DP} offers two algorithms that compute the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
+
+\subsubsection{Policy Iteration}
+In policy iteration, two consecutive operations are performed on a policy $\pi$ in order to obtain a policy $\pi'$ that is better according to the ordering rule in~\eqref{eq:ordpol}. These operations are called \emph{policy evaluation} and \emph{policy improvement} and the goal of the algorithm is to obtain the optimal value function $V^{*}$ through the sequence:
+\begin{align}
+\pi_{0} \xrightarrow{\text{E}} V^{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V^{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V^{*}.
+\end{align}
+Policy evaluation consists in computing the value function $V^{\pi}$ for every state $s \in \Sspace$, according to the current policy $\pi$, by iteratively applying the following updating rule:
+\begin{align} V_{k+1}(s) = \sum_{a}\pi(a|s) \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a) V_{k}(s') \Big), \label{eq:updrule} \end{align}
+until $V_{k+1}(s) = V_{k}(s) \quad \forall s \in \Sspace$. When it happens, the convergence to $V^{\pi}$ is obtained. The existence of $V^{\pi}$ is guaranteed as long as $\gamma < 1$. \todo{enough for convergence? cit some paper?} \\
+\newline
+Policy improvement consists in an update of policy $\pi$ in a new deterministic policy $\pi'$, according to the value function $V^{\pi}$ computed in the previous policy evaluation. For each state $s \in \Sspace$, indeed, the policy $\pi'$ is computed according to the following rule:
+\begin{align} 
+\pi'(s) = \arg \max_{a} \Big( R(s,a) + \gamma \sum_{s'} P(s'|s,a)  V^{\pi}(s') \Big). \label{eq:polimp}
+\end{align}
+When $\pi'(s) = \pi(s) \quad \forall s \in \Sspace$ or $\pi'$ is as good as $\pi$ (\ie $V^{\pi} = V^{\pi'}$), the algorithm terminates. The policy $\pi'$ is considered to be optimal, then $\pi^{*} = \pi'$.
+\subsubsection{Value Iteration} \label{subsec:vi}
+The main drawback in policy iteration is that, for each policy evaluation, multiple iterations of the updating rule (\ref{eq:updrule}) are required. If we truncate the policy evaluation after just one application of the updating rule, we obtain the value iteration. In value iteration, the value function at each step is updated for all $s \in \Sspace$ as follows:
+\begin{align} V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big). \end{align}
+Differently from policy iteration, we don't compute any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions converges to $V^{*}$ \todo{cit smth related to the convergence?} and the optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp}, with $V^{*}$ instead of $V^{\pi}$.
+
+\subsection{Uncomplete Knowledge of \ac{MDPs}}
+In many cases, however, it is not possible to apply \ac{DP}. Some alternatives are introduced below for sake of completeness. We don't detail these methods because they are not related to our work.  
+
+\subsubsection{Tabular Alternatives to \ac{DP}}\label{subsec:alt}
+If we don't have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the interaction agent-environment at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. 
+
+\subsubsection{Approximate Solution Methods}
+The methods present so far are not suitable to solve \ac{RL} problems that involve a larger state space. In these problems we cannot expect to obtain the optimal policy, our goal is to find a good approximate solution using limited computational resources. In an environment with a continuous state space $\Sspace$, the agent will always visit states $s$ never seen before. Then, the experience we gather gives information on a subset of states but we need to generalize it to all the state space $\Sspace$. The generalization comes up in the form of \emph{function approximations}. These functions are estimated from samples and approximate value functions of continuous state space $\Sspace$ in place of tables.\\
+\newline
+Several methods rely on value function approximation in order to provide the solution of \ac{RL} problem. However, function approximation arises new issues. First of all, convergence assurances are difficult to be given: if the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\citet{Sutton1999PolicyGM}]. Approximated value functions $U_t$ can introduce a bias that prevents the method to converge to a local optimum. \todo{too complex functions as neural networks with a lot of parameters as approximate value fun?}
+
+\section{Policy Search}\label{sec:ps}
+In contrast with value-based methods, \acf{PS} methods use parametrized policies $\pi_{\theta}$, where $\theta \in \Theta$. The set of parameter $\theta$ fixes in advance the candidate policies, \ie the class $\Pi_{\Theta} = \{ \pi_{\theta} | \theta \in \Theta \}$. \ac{PS} methods directly operate in the parameter space $\Theta$ (\ie in the class of candidate policies) to find the optimal parametrized policy and typically avoid to learn a value function. \ac{PS} copes with high dimensional state space $\Sspace$ and action space $\Aspace$ and offers better convergence assurances compared to the methods that involve function approximation. Because of this, \ac{PS} methods have been found to be suitable in robotic applications.\\
+\newline
+Most of the algorithms in \ac{PS} are \emph{model-free} (\ie they don't require a model of the environment) because directly learning a policy is often easier than learning an accurate model. These methods update the policy directly exploiting the sampled trajectories, hence it is important to define an exploration strategy that provides variety in trajectories. Exploration can be performed both in the action space and in the parameter space. The former one is implemented by adding a noise $\epsilon$ directly to the executed actions, the noise is generally sampled from a zero-mean Gaussian distribution. The latter consists in a perturbation of the parameter vector $\theta$ of $\pi_{\theta}$. The magnitude of noise present in any kind of exploration depends on some parameters. These parameters can also be updated by the algorithms: usually the size of exploration is gradually decreased to fine tune the policy parameters. [\citet{deisenroth2013Survey}].
+
+\subsection{Policy Representations} \label{subsec:polrep}
+In our work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^{m\times D}$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The simplest way of parametrizing $\pi_{\vtheta}$ is by means of a linear mapping. The linear policy is defined as 
+\begin{align} \pi_{\vtheta}(s) = \vtheta^T\vphi(s), \end{align} where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of \acf{RBF}. An example of RBF is the Gaussian
+\begin{align} \phi_i(s; \mu_i, \sigma_i) = \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}, \end{align}
+where $\mu_i$ and $\sigma_i$ are hyperparameters, $i=1,\dots,m$. More complex policy parametrizations include deep neural networks~\citep{duan2016benchmarking}. 
+Stochastic policies randomize over actions. In continuous settings, this is typically done by adding a Gaussian noise, \eg for a linear policy $a\sim\mathcal{N}(\vtheta^T\vphi(s),\Sigma)$, where $\Sigma\in\Reals^{D\times D}$ is a covariance matrix.\\
+\newline
+A common parametrization for countinuous actions represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a scalar action, with mean $\mu$ and standard deviation $\sigma$ given by parametric function approximators that depend on the state:
+\begin{align} \pi_{\theta}(a|s) = \frac{1}{\sigma(s, \theta)\sqrt{2\pi}}exp\Big( -\frac{(a -\mu(s, \theta))^2}{2\sigma(s, \theta)^2}\Big), \end{align}
+where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$. \todo{aggiuingere softmax}
+
+\section{Special \NoCaseChange{\ac{MDPs}}} \label{sec:specmdp}
+In this section we present two types of \ac{MDPs} not so common in literature, that allows us to represent some properties of interest for the \ac{MDPs} considered in the work.
+
+\subsection{Bounded \ac{MDPs}} \label{subsec:bmdp}
+A \acf{BMDP} [\cite{givan2000bounded}] is a five-tuple $\langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$, where $\Sspace$, $\Aspace$ and $\gamma$ are defined as for (finite) MDPs, and $P_{\updownarrow}, R_{\updownarrow}$ are analogous to the MDP transition and reward functions, but yield closed real intervals instead of real values: given a lower bound $\underline{P}$ and an upper bound $\overline{P}$, $P_{\updownarrow} = [\underline{P}; \overline{P}]$. Similarly we can specify the interval $R_{\updownarrow}$. This can be used to model uncertainty on the true nature of a decision process. To ensure that $P_{\updownarrow}$ admits only well-formed transition functions, we require that for any action $a$ and state $s$, the sum of the lower bounds of $P_{\updownarrow}(s'|s,a)$ over all states $s'$ must be less than or equal to one, while the upper bounds must sum to a value greater than or equal to one.\\
+\newline
+A BMDP $M_{\updownarrow} = \langle \Sspace, \Aspace, P_{\updownarrow}, R_{\updownarrow}, \gamma \rangle$ defines a set of exact MDPs. For any exact MDP $M = \langle \Sspace', \Aspace', P', R', \gamma' \rangle$, we have $M \in M_{\updownarrow}$ if $\Sspace = \Sspace', \Aspace = \Aspace', \gamma = \gamma'$, and for any action $a$ and states $s, s', R'(s,a)$ belongs to the interval $R_{\updownarrow}(s,a)$ and $P'(s'|s,a)$ belongs to the interval $P_{\updownarrow}(s'|s,a)$. An interval value function $V_{\updownarrow}$ is a mapping from states to closed real intervals. We use such functions to indicate that the value of a given state for any exact MDP falls within the selected interval. As in the case of (exact) value functions, interval value functions are specified \wrt a fixed policy $\pi$, \ie:
+\begin{align} V_{\updownarrow, \pi}(s) = \Big[ \underline{V}_{\pi}(s), \overline{V}_{\pi}(s)\Big] = \Big[ \min_{M \in M_{\updownarrow}} V_{M,\pi}(s), \max_{M \in M_{\updownarrow}} V_{M,\pi}(s)\Big]. \end{align}
+According to[\cite{givan2000bounded}], there exists in $M_{\updownarrow}$ an \ac{MDP} that simultaneously achieves $\underline{V}_{\pi}(s)$ for all $s \in \Sspace$ and another one that achieves $\overline{V}_{\pi}(s)$ for all $s \in \Sspace$.\\
+\newline
+The notion of optimal value function in \ac{BMDP}s requires an ordering rule for intervals. We can define two different possible orderings:
+\begin{align}
+[l_1, u_1] \leq_{pes} [l_2, u_2] &\Leftrightarrow 
+\begin{cases}
+l_1 < l_2 \text{, or }\\
+l_1 = l_2 \text{ and } u_1 \leq u_2
+\end{cases} \label{eq:pes}\\
+[l_1, u_1] \leq_{opt} [l_2, u_2] &\Leftrightarrow 
+\begin{cases}
+u_1 < u_2 \text{, or }\\
+u_1 = u_2 \text{ and } l_1 \leq l_2
+\end{cases} \label{eq:opt}
+\end{align}
+We use these orderings rules to partially order interval value functions in the following way:
+\begin{align} V_{1 \updownarrow} \leq V_{2 \updownarrow} \iff V_{1 \updownarrow}(s) \leq_{*} V_{2 \updownarrow}(s) \quad \forall s \in \Sspace, \end{align}
+with $\leq_{*}$ defined as $\leq_{pes}$ in~\eqref{eq:pes} or $\leq_{opt}$ in~\eqref{eq:opt}.\\
+\newline
+As stated in [\cite{givan2000bounded}], there exists at least one optimistically and one pessimistically optimal policy:
+\begin{align*}
+V^{*}_{\updownarrow \text{opt}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{opt} \text{ to order interval value functions,}\\
+V^{*}_{\updownarrow \text{pes}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{pes} \text{ to order interval value functions.}
+\end{align*}
+In order to better understand the meaning of the optimal policies, we consider a game in which we choose a policy $\pi$ and then a second player chooses an \ac{MDP} $M \in M_{\updownarrow}$ to evaluate the policy. $\overline{V}^{*}_{opt}$ is the best value function we can obtain if the second player cooperates in the game, $\underline{V}^{*}_{pes}$ is the best value function obtainable if the second player is an adversary.\\
+\newline
+We define the \acf{IVI} algorithm that computes optimal value intervals, it is similar to the standard value iteration presented in \mySubsec{subsec:vi}. In \ac{IVI} the updating rule is:
+\begin{align}
+V_{\updownarrow, k+1}(s) = \max_{a \in \Aspace, \leq_{*}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V}_{k})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V}_{k})(s) \Big], \label{eq:ivi}
+\end{align}
+where $\leq_{*}$ is $\leq_{pes}$ or $\leq_{opt}$. Given an \ac{MDP} $M$ with transition function $P$ and reward function $R$, an action $a \in \Aspace$ and a value function $v$, $VI_{M, a}(v)(s)$ is a single iteration of policy evaluation, where the action is fixed and 
+\begin{align} 
+VI_{M, a}(v)(s) = R(s,a) + \gamma \sum_{s' \in \Sspace} P(s'|s,a)v(s'). \label{eq:vi}
+\end{align}
+In~\eqref{eq:ivi} it is required to perform two iterations VI. The two value functions used to perform the iterations (\ie the functions used instead of $v$ in~\eqref{eq:vi}) are obtained from the interval value function $V_{\updownarrow, k}$. For the first iteration, $v = \underline{V}_{k}$, with $\underline{V}_{k}$ the lower bounds in $V_{\updownarrow, k}$; for the second one $v = \overline{V}_{k}$ with $\overline{V}_{k}$ the upper bounds in $V_{\updownarrow, k}$.\\
+\newline
+Instead of searching in the set $M_{\updownarrow}$, the \ac{MDP} $M$ that minimizes (maximizes) the expressions under $\min (\max)$ operator in~\eqref{eq:ivi} can be directly obtained by computing an exact transition function $P$ from the interval transition function $P_{\updownarrow}$ of $M_{\updownarrow}$. In order to do that, the arriving states $s' \in \Sspace$ are sorted in increasing (decreasing) order according to their $\underline{V}(\overline{V})$. Then, for all the state-action pairs $(s,a) \in \Sspace \times \Aspace$ and given an ordering of arriving states $s'_1, s'_2, ..., s'_k$, we calculate the index $r$, with $1 \leq r \leq k$, that maximizes the following expression without letting it exceed 1:
+\begin{align} \sum_{i=1}^{r-1}\overline{P}(s'_i|s,a) + \sum_{i=r}^{k}\underline{P}(s'_i|s,a). \end{align}
+The exact transition function $P(.|s,a)$ is defined by assigning the upper bound $\overline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index lower than $r$, the lower bound $\underline{P}(s'|s,a)$ to the transition probabilities involving states $s'$ with an index greater than $r$ and the probability that ensures $\sum_{s' \in \Sspace}P(s'|s,a) = 1$ to the state with index $r$.
+
+\subsection{Lipschitz \ac{MDPs}}
+We introduce the notion of \emph{Lipschitz continuity} in order to define some properties of regularity in the \ac{MDP}. These properties can be exploited in policy gradient algorithms, in [\citet{pirotta2015policy}] is shown how they can ensure a performance improvement at each iteration of policy-parameter updates. In this section we provide basic concepts related to Lipschitz continuity and useful bounds that will be exploited in our work.
+\begin{definition}[Lipschitz continuity]
+Given two metric sets $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-\acf{LC} if
+\begin{align} \forall(x_1, x_2) \in X^2, d_Y(f(x_1), f(x_2)) \leq L_f d_X(x_1, x_2). \label{eq:lip} \end{align}
+\end{definition}
+\noindent The smallest $L_f$ for which~\eqref{eq:lip} holds is called the Lipschitz constant of $f$. For real-valued functions (\eg the reward function $R$), we use the Euclidean distance as metric for the codomain distance. For the transition function $P$ and the policies $\pi$ we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures, defined as follows.
+\begin{definition}[Kantorovich metric]
+Given two probability measures $p$ and $q$, the Kantorvich measure $\Kant(p, q)$ is:
+\begin{align} \Kant(p, q) = \sup_f\Big\{ \Big| \int_x f(x) d\Big(p(x)-q(x)\Big) \de x \Big|: L_f \leq 1 \Big\}. \end{align}
+\end{definition}
+\noindent In this work, we restrict our attention to Lipschitz-continuous MDPs and policies. We make similar assumptions as in [\cite{pirotta2015policy}]. For the MDP, we require both the continuity of the transition model and the reward:
+%
+\begin{assumption}[Lipschitz MDP]\label{ass:lipmdp}
+	For all $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
+	\begin{align}
+	&\Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},\wt{a})\right) \leq L_{P}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right), \\
+	&\left|R(s,a) - R(\wt{s},\wt{a})\right| \leq L_{R}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
+	\end{align}
+	for some positive real constants $L_{P}$ and $L_{R}$.
+\end{assumption}
+%
+\noindent where $d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right) = \norm{s-\wt{s}} + \norm{a-\wt{a}}$ is the taxicab norm on $\Sspace\times\Aspace$.
+We also require our deterministic policy to be continuous both \wrt the input state and its parameters:
+%
+\begin{assumption}[Lipschitz Policies]\label{ass:lippol}
+	For all $s,\wt{s}\in\Sspace$ and $\vtheta,\wt{\vtheta}\in\Theta$:
+	\begin{align}
+	&\norm{\pi_{\vtheta}(s) - \pi_{\vtheta}(\wt{s})} \leq L_{\pi_{\vtheta}}\norm{s-\wt{s}}, \\
+	&\norm{\pi_{\vtheta}(s) - \pi_{\wt\vtheta}(s)} \leq L_{\Theta}\norm{\vtheta-\wt{\vtheta}},
+	\end{align}
+	for some positive real constants $\{L_{\pi_{\vtheta}}\}_{\vtheta\in\Theta}$ and $L_{\Theta}$.
+\end{assumption}
+%
+\noindent We use the euclidean norm to measure distances on $\Sspace$, $\Aspace$ and $\Theta$, but everything works for general metrics.
+In the following, we will always assume that ${L_{P}(1+L_{\pi_{\vtheta}}) < \gamma^{-1}}$.
+These assumptions are enough to guarantee the continuity of the value functions \wrt states and actions:
+%
+\begin{lemma}[\citet{rachelson2010locality}]\label{lem:lipval}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $s,\wt{s}\in\Sspace$, $a,\wt{a}\in\Aspace$ and $\vtheta\in\Theta$:
+	\begin{align}
+	&\left|V^{\vtheta}(s) - V^{\vtheta}(\wt{s})\right| \leq L_{V^{\vtheta}}\norm{s-\wt{s}}, \\
+	&\left|Q^{\vtheta}(s,a) - Q^{\vtheta}(\wt{s},\wt{a})\right| \leq L_{Q^{\vtheta}}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
+	\end{align}
+	where $L_{Q^{\vtheta}} = \frac{L_{R}}{1-\gamma L_{P}(1+L_{\pi_{\vtheta}})}$ and $L_{V^{\vtheta}} = L_{Q^{\vtheta}}(1+L_{\pi_{\vtheta}})$.
+\end{lemma}
+%
+\noindent and also of the future-state distributions \wrt policy parameters:
+%
+\begin{lemma}[\citet{pirotta2015policy}]\label{lem:lipfut}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta,\wt\vtheta\in\Theta$:
+	\begin{align}
+	&\Kant\left(\delta^{\vtheta},\delta^{\wt{\vtheta}}\right) \leq L_{\delta^{\vtheta}}\norm{\vtheta-\wt{\vtheta}},
+	\end{align}
+	where $L_{\delta^{\vtheta}} = {\gamma L_{P}L_{\pi_{\vtheta}}}\big/{\left(1-\gamma L_{P}(1+L_{\pi_{\vtheta}})\right)}$.
+\end{lemma}
+
+\section{State abstraction} \label{sec:stdisc}
+
+An abstraction is a mapping from one problem representation to a new simpler representation that preserves some properties of interest. State abstractions~\citep{lihong2006towards} map MDPs to MDPs with simpler state spaces, typically for computational purposes. Let $ M = \langle \Sspace, \Aspace, P, R, \gamma \rangle$ be the ground MDP and its abstract version be $\wt{M} = \langle \Xspace, \Aspace, \widetilde{P}, \widetilde{R}, \gamma \rangle$. We define the abstraction function as $\Gamma: \Sspace \to \Xspace$, so that $\Gamma(s)\in\Xspace$ is the abstract state corresponding to the ground state $s$ and $\Gamma^{-1}(X)\subseteq\Sspace$ denotes the inverse image of $X$ under $\Gamma$. $\widetilde{P}$ is the abstract transition function, with $\widetilde{P}(X'|X,a)$ denoting the probability of reaching $X'$ from $X$ by taking action $a$, and $\widetilde{R}$ is the reward function with $\widetilde{R}(X,a)$ denoting the expected reward from taking action $a$ in abstract state $X$.\\
+\newline
+To guarantee $\widetilde{P}$ and $\widetilde{R}$ are well-defined, we can use a weighting function  $w: \Sspace \to [0, 1]$ such that $\int_{\Gamma^{-1}(X)} w(s)\de s = 1$ for all $X \in \Xspace$. With these weights at hand, we can define the transition and reward functions of the abstract MDP as follows:
+%
+\begin{align}
+&\widetilde{R}(X,a) = \int_{\Gamma^{-1}(X)}w(s)R(s,a)\de s,\nonumber \\
+&\widetilde{P}(X'|X,a) = \int_{\Gamma^{-1}(X)}w(s)\int_{\Gamma^{-1}(X')} P(s'|s,a)\de s\de s'.\nonumber
+\end{align}
+%
+These equalities may be not enough to include in the abstraction definition the notion of state similarity. Another drawback is that the abstract states $X \in \Xspace$ are often imperfect because representing the current environment in terms of abstract states necessarily neglects information. However, finding solution in the abstract state space $\Xspace$ is faster than in the ground state space $\Sspace$ because groups of states are treated as a unit and learning techniques can be applied in large, real-world environments. A central issue in the theory of abstraction is to distinguish between relevant and irrelevant information, use the former to outline how the state abstraction is performed and discard the latter.\\
+\newline
+Several state abstractions schemes have been proposed, all of them aggregate the ground states $s$ that are equal according to some measure, in the same abstract state $X$. In this work, we focus on \textit{state aggregation} where $\Xspace$ is a partition of $\Sspace$ and $s\in\Gamma(s)$. Hence, we will often identify $\Gamma^{-1}(X)$ with $X$ (as a set) itself. When it is possible, state abstraction focuses on the preservation of those properties that lead an agent to optimal behaviours. In [\cite{lihong2006towards}], five different types of abstractions are presented, all of these methods preserve some information critical for solving the original \ac{MDP}. They can be ordered from the method that prescribes the finest abstraction to the method that prescribes the coarsest one. Here we report the five types of abstraction, called \emph{irrelevance abstractions}:
+\begin{itemize}
+	\item A \emph{model-irrelevance} abstraction $\Gamma_{model}$ is such that for any action $a$ and ay avstract state $X$, $\Gamma_{model}(s_1) = \Gamma_{model}(s_2)$ implies $R(s_1,a)=R(s_2,a)$ and $\int_{X'}P(s'|s_1,a) \de s'= \int_{X'}P(s'|s_2,a) \de s'$.
+	\item A $Q^{\pi}$-irrelevance abstraction $\Gamma_{Q^{\pi}}$ is such that for any policy $\pi$ and any action $a$, $\Gamma_{Q^{\pi}}(s_1) = \Gamma_{Q^{\pi}}(s_2)$ implies $Q^{\pi}(s_1,a)=Q^{\pi}(s_2,a)$.
+	\item A $Q^{*}$-irrelevance abstraction $\Gamma_{Q^{*}}$ is such that for any action $a$, $\Gamma_{Q^{*}}(s_1) = \Gamma_{Q^{*}}(s_2)$ implies $Q^{*}(s_1,a)=Q^{*}(s_2,a)$.
+	\item An $a^{*}$-irrelevance abstraction $\Gamma_{a^{*}}$ is such that every abstract state $X$ has an action $a^{*}$ that is optimal for all the states $s \in X$, and $\Gamma_{a^{*}}(s_1) = \Gamma_{a^{*}}(s_2)$ implies that $Q^{*}(s_1,a^{*})=Q^{*}(s_2,a^{*})$.
+	\item A $\pi^{*}$-irrelevance abstraction $\Gamma_{\pi^{*}}$ is such that every abstract state $X$ has an action $a^{*}$ that is optimal for all the states $s \in X$, and $\Gamma_{\pi^{*}}(s_1) = \Gamma_{\pi^{*}}(s_2)$ implies that $Q^{*}(s_1,a^{*})=\max_{a}Q^{*}(s_1,a)$ and $Q^{*}(s_2,a^{*})=\max_{a}Q^{*}(s_2,a)$.
+\end{itemize}
+
+\noindent $\Gamma_{model}$ is a special case of state abstraction, called \emph{bisimulation}, where states with the same transition and reward functions are aggregated. The rule for aggregation is very strict and not applicable in most of the cases. Because of this, in approximated bisimulation the requirements of exact equivalence for the transition and reward functions are replaced with bounds that allow to aggregate in the same abstract state $X$ all the states $s$ for which the difference in the functions is below a certain value. From these bounds, it is possible to consider a bounded \ac{BMDP} and solve it as we discussed in \mySubsec{subsec:bmdp}.\\
+\newline
+The policies obtained by solving the abstract \ac{MDP} are a (possibly stochastic) mapping from abstract states to actions. Given an abstract policy $\rho$, it can be translated in the ground state space $\Sspace$ as: 
+\begin{align}
+	\pi(a|s) = \rho(a|\Gamma(s))
+\end{align}
+Coarser abstraction methods provide a better computational efficiency and generalization \wrt finer abstractions but have looser performance loss bounds. Indeed, in [\cite{lihong2006towards}] it is stated that in $\Gamma_{model}$, $\Gamma_{Q^{\pi}}$, $\Gamma_Q^{*}$ and $\Gamma_{a^{*}}$ abstractions, the optimal abstract policy $\rho^{*}$ is optimal also in the ground \ac{MDP}, while it can be suboptimal in $\Gamma_{\pi^{*}}$ abstraction.
+

@@ -1,0 +1,191 @@
+\chapter{The algorithm}
+
+\section{Passive Exploration via $\delta$-MDPs}\label{sec:deltamdp}
+%Passive exploration
+As mentioned in Section~\ref{sec:intro}, our goal is to gather the samples needed for improving a parametric policy \emph{without performing random actions}. A way to satisfy this strict requirement is to learn a deterministic policy and only perform the actions it prescribes. 
+%By doing this, the sampling phase does not involve any random exploration and, in every moment, it is possible to know the exact action that will be performed by the agent. 
+This, unfortunately, prevents any form of active exploration. 
+However, if the environment is sufficiently regular, we can exploit a form of \emph{passive} exploration. The fundamental problem is that, by observing a single action for each (continuous) state and without any probability measure over actions, we have no way of preferring one action over another for that particular state, which makes policy optimization impossible.  
+The key idea is to aggregate states in such a way as to observe a variety of actions within these larger, abstract states. These are simply the actions chosen by our deterministic policy in the different states belonging to the same aggregate. In a sense, aggregation allows transferring the variety of the states visited by our policy (both over different time-steps of the same episode and over independent episodes) into actions. Variety over states is encoded by the future-state distribution $\delta^{\vtheta}$, and is fueled by stochastic transitions and random restarts.
+The price to pay is basically a discretization error. This could be, in general, unbounded. However, in Lipschitz MDPs we can keep this error under control, as we will show in Section~\ref{sec:algo}.
+%
+%Indeed, in a Lipschitz MDP, if we know the effect of taking an action $a$ in a state $s$, we can transfer this knowledge to obtain information about the effect of some unseen state-action pair $(\widetilde{s}, \widetilde{a})$. We can see this as the deterministic equivalent of using a random sample as a proxy for the distribution it was generated from. 
+%For instance, if next-state $s'$ is obtained from sample $(s, a)$, Lipschitz conditions provide an interval in which the next state $\widetilde{s'}$ will be included  of a state-action pair $(\widetilde{s}, \widetilde{a})$ that doesn't appear in our samples. The estimated interval is as precise as the two pairs $(s, a)$ and $(\widetilde{s}, \widetilde{a})$ that we consider are similar, where similarity is measured according to a distance measure.
+%It appears to be a good idea to consider a sample where an action $a$ is performed in a state $s$ and estimate the effect of taking the same action $a$ in the sampled states that are similar to $s$: in this way, only actions suggested by the deterministic policy are evaluated and the effect of unseen state-action pairs can be upper bounded with a precision that increases with the similarity of the considered states. 
+%The information we gain from Lipschitz properties is in the form of bounds. For instance, if next-state $s'$ is obtained from observed state-action pair $(s, a)$, Lipschitz conditions provide a spherical region containing \emph{for sure} the state $\widetilde{s'}$ reached from unseen state-action pair $(\widetilde{s}, \widetilde{a})$, assuming deterministic transitions and Euclidean metric. The more similar the two pairs $(s, a)$ and $(\widetilde{s}, \widetilde{a})$ are, the more precise our region will be, and more data can be used to refine our knowledge by intersecting the corresponding regions. 
+%In the continuous bandit (\ie single-state) setting,~\citet{kleinberg2019bandits} provide a way of constructing such regions via directed exploration that is optimal in terms of regret. Albeit deterministic, the resulting behavior would be erratic, and hardly representable with a simple parametric controller.
+%The abstract MDP
+We are going to implement this idea by building an abstract MDP over aggregated states. We divide the original state space $\Sspace$ into a partition $\Xspace$. To exploit the Lipschitz continuity of our environment, we need to aggregate states taking their mutual distance into account. For this reason, we only consider \textit{tessellations} of the state space, such as grids. 
+%
+We denote by $D(X) = \sup_{s,\wt{s}\in X}\norm{s-\wt{s}}$ the diameter of an abstract state $X\in\Xspace$.
+We want the transition and reward functions of our abstract MDP to model the overall effect of actions on abstract states, so that the optimization in the abstract MDP corresponds, at least approximately, to the resolution of the original policy optimization problem\footnote{Doing this exactly would require additional assumptions, like bisimulation~\citep{givan2003equivalence}, which we deem too restrictive.}. To do so, we use the future-state distribution $\delta^{\vtheta}$ as a weighting function (see Section~\ref{sec:stateabstraction}), obtaining:
+%
+\begin{align}
+	&\widetilde{R}_{\vtheta}(X,a) = \int_{X}\frac{\delta^{\vtheta}(s)}{Z_{\vtheta}(X)}R(s,a)\de s,\label{eq:abrew2} \\
+	&\widetilde{P}_{\vtheta}(X'|X,a) = \int_{X} \frac{\delta^{\vtheta}(s)}{Z_{\vtheta}(X)} \int_{X'} P(s'|s,a)\de s\de s',\label{eq:abtran2}
+\end{align}
+%
+where $Z_{\vtheta}(X)=\int_{X}\delta^{\vtheta}(s)\de s$ is a normalization factor necessary to ensure that the weights sum to one.
+This completes the definition of our abstract MDP, called $\delta$-MDP in the following to stress the fundamental role of the future-state distribution:
+%
+\begin{definition}\label{def:abmdp}
+	Given an MDP $\langle\Sspace, \Aspace, P, R, \gamma\rangle$, a policy $\pi_{\vtheta}$, and a partition $\Xspace$ of $\Sspace$, the corresponding $\delta^{\vtheta}$-MDP is $\langle\Xspace, \Aspace, \wt{P}_{\vtheta}, \wt{R}_{\vtheta}, \gamma\rangle$, where $\widetilde{R}_{\vtheta}$ is defined as in Equation~\eqref{eq:abrew2} and $\wt{P}_{\vtheta}$ as in Equation~\eqref{eq:abtran2} for all $X,X'\in\Xspace$ and $a\in\Aspace$.
+\end{definition}
+%
+A theoretical justification for these definitions is provided in Section~\ref{sec:algo}.
+A starting-state distribution for the $\delta$-MDP can be similarly defined as $\wt{\mu}(X) = \int_{X}\mu(s)\de s$ for all $X\in\Xspace$, where $\mu$ is a starting-state distribution for the original MDP.
+%
+A (stationary, Markovian) abstract policy is a (possibly stochastic) mapping from abstract states to actions. In order not to confuse them with concrete policies, we will denote them with the letter $\rho$. Fixed the abstract MPD, we can define value functions $V^{\rho}$ and $Q^{\rho}$, future-state distribution $\delta^{\rho}$ (over $\Xspace$) and optimal policy $\rho^{*}$, as in any MDP. Note that there is no direct correspondence, in general, between concrete and abstract policies, since the behavior of a concrete policy may appear non-Markovian in the abstract MDP~\citep{lihong2006towards}.
+However, we introduce a simple "concretization" operator $\Conc: \rho \mapsto \pi$ from abstract policies to concrete policies, defined as
+%\begin{align}
+$(\Conc\rho)(s) = \rho(\Gamma(s))$
+%\end{align}
+for any $\rho:\Xspace\to\Aspace$ and $s\in\Sspace$. The resulting concrete policy $\pi = \Conc\rho$ performs the same action $\rho(X)$ for all states $s\in X$, hence it is a piece-wise constant function.
+
+\section{Deterministic Policy Optimization}\label{sec:algo}
+In this section, we show how to use the $\delta$-MDPs defined in Section~\ref{sec:deltamdp} to approximately solve the policy optimization problem, under Lipschitz conditions but without access to random actions.
+%
+The proposed methodology is as follows: given the original MDP and a deterministic parametric policy $\pi_{\vtheta}$, we build the corresponding  $\delta^{\vtheta}$-MDP using only the data collected with $\pi_{\vtheta}$ itself. This requires estimating the abstract reward and transition functions. To do so, we can actively exploit the Lipschitz conditions, as discussed in the next section.
+The solution of the $\delta^{\vtheta}$-MDP is a deterministic optimal abstract policy $\rho^{*}$, which is guaranteed to exist and maximizes $V^{\rho}(X)$ for all $X\in\Xspace$. This abstract policy can be emulated in the original MDP by $\Conc\rho^{*}$, the piecewise-constant policy. In general, $\Conc\rho^{*}$ may not belong to the original parametric policy space. Hence, we need to project it back as $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho^{*})$, where $\Proj$ is a projection operator. The new parameter vector $\vtheta'$ identifies the novel policy that we are going to run in the environment. The procedure can then be repeated. We call this general method Deterministic Policy Optimization (DPO for short), outlined in Algorithm~\ref{alg:dpo}.
+We now provide a theoretical justification of this approach, which also gives further insights on how to concretely perform the different phases of the algorithm. 
+The overall goal is to maximize the performance improvement $J(\vtheta') - J(\vtheta)$. The following lower bound
+%, based on the Performance Difference Lemma~\citep{kakade2002approximately}, 
+justifies the proposed approach under the Lipschitz assumptions:
+%
+\begin{restatable}{theorem}{boundj}\label{lem:boundj}
+	For any deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$, state partition $\Xspace$ and deterministic abstract policy ${\rho:\Xspace\to\Aspace}$, let $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho)$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}:
+	\begin{align*}
+	&J(\vtheta') - J(\vtheta) \geq \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s 
+	\nonumber\\&\qquad- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
+	-\frac{L_{\text{shift}}}{1-\gamma} \norm{\vtheta'-\vtheta},
+	\end{align*}
+	where $L_{\text{shift}}=L_{\delta^{\vtheta}}\left(L_{Q^{\vtheta}}\left(1+L_{\pi_{\vtheta'}}\right)+L_{V^{\vtheta}}\right)$, $L_{\delta^{\vtheta}}$ is from Lemma~\ref{lem:lipfut}, and $L_{Q^{\vtheta}}$, $L_{V^{\vtheta}}$ are from Lemma~\ref{lem:lipval}. 
+\end{restatable}
+%
+%
+\begin{algorithm}[t]
+	\caption{DPO}
+	\label{alg:dpo}
+	\begin{algorithmic}[1]
+		\STATE {\bfseries Input:} policy class $\Pi_{\Theta}$, initial policy parameter $\vtheta$, batch size $N$
+		\STATE Partition the state space into $\Xspace$
+		\FOR{$t=0,1,\dots$}
+		\STATE Collect $N$ samples with $\pi_{\vtheta}$ 
+		\STATE Estimate $\wt{R}_{\vtheta}$ and $\wt{P}_{\vtheta}$ over $\Xspace$
+		\STATE Solve the $\delta^{\vtheta}$-MDP to find optimal abstract policy $\rho^{*}$
+		\STATE Project $\Conc\rho^{*}$ back into $\Pi_{\Theta}$ to find $\vtheta'$
+		\STATE $\vtheta\gets\vtheta'$
+		\ENDFOR
+	\end{algorithmic}
+\end{algorithm}
+%
+This lower bound on performance improvement can serve as a surrogate optimization objective. In particular, the first term provides a criterion for selecting the abstract policy $\rho$, while the remaining terms provide a principled way to project it back into the original policy space. 
+We will perform these two tasks separately. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
+First, let us consider the projection part: 
+\begin{align}\label{eq:proj}
+	\min_{\vtheta'\in\Theta} \norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
+	+ \lambda\norm{\vtheta'-\vtheta},
+\end{align}
+where $\lambda=L_{\text{shift}}\big/L_{Q^{\vtheta}}$. The first term accounts for the difference between the piecewise-constant policy and the updated parametric policy. It would be minimized by an exact projection. Since the error is weighted by the future-state distribution, we can use the samples collected with the original deterministic policy to approximately perform the projection, which is a regression problem. The second term accounts for the distributional mismatch between the future-state distributions of the two parametric policies. It can be added as a regularization term in the regression. More details on this projection phase are provided in the next section.
+%
+For the rest of this section, we will focus on the problem of selecting the best abstract policy: 
+%
+\begin{align}
+\max_{\rho:\Xspace\to\Aspace}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s,
+\end{align}
+%
+and show that the optimal policy of the $\delta$-MDP is indeed a reasonable choice. This problem has no trivial solution, as we do not know the advantage function $A^{\vtheta}$, and estimating it for all (infinite) states and actions with our limited samples is out of reach. Let us first define the equivalent maximization problem:
+\begin{align}\label{eq:W}
+	\max_{\rho:\Xspace\to\Aspace} \sum_{X\in\Xspace}W^{\rho}(X),
+\end{align}
+where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$, obtained by observing that $V^{\vtheta}$ does not depend on $\rho$. This is equivalent to finding, for each abstract state $X\in\Xspace$, the action that maximizes $W^{\rho}(X)$. In DPO, we solve the $\delta$-MDP for an optimal (deterministic) abstract policy $\rho^{*}$, which maximizes the value function $V^{\rho}(X)$ for all $X\in\Xspace$. The following Theorem establishes the similarity of $W^{\rho}$ with $V^{\rho}$ under the Lipschitz assumptions, justifying our approach: 
+%
+\begin{restatable}{theorem}{surr}\label{lem:surr}
+	Fixed a deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$ and a state partition $\Xspace$, for any deterministic abstract policy $\rho:\Xspace\to\Aspace$, let $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $X\in\Xspace$, provided $\rho(X) \in \pi_{\vtheta}(X)$:
+	\begin{align*}
+	|W^{\rho}(X) - V^{\rho}(X)| \leq \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
+	%\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X'),
+	\end{align*}
+	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$, $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
+\end{restatable}
+%
+An immediate consequence is that: 
+\begin{align}\label{eq:wstar}
+	W^{\rho^*}(X) \geq V^{\rho^*}(X) - \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
+\end{align}
+\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-MDP as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$, to our surrogate objective from Theorem~\ref{lem:boundj}.
+%
+These theoretical bounds justify our definition of $\delta$-MDP and how we use the optimal abstract policy to update the original parameters.
+In addition, this analysis provides some insight into how choosing the partition $\Xspace$ affects the optimization problem. From~\eqref{eq:wstar}, it would seem that a finer discretization is always better. However, an important assumption of Theorem~\ref{lem:surr} suggests that this is not the case: for the error bound to hold, $\rho$ must be chosen so that, for all $X\in\Xspace$, $\rho(X)$ belongs to $\pi_{\vtheta}(X)$, the subset of actions performed by the original policy $\pi_{\vtheta}$ in the states of $X$. This additional constraint on the abstract policy is necessary to keep the discretization error under control, but it introduces a further \textit{model bias} in the solution of the policy optimization problem, since the optimum over the complete action space may no longer be attainable. This bias is larger when the restricted action sets are smaller, which may result from very fine discretizations. 
+%
+Intuitively, we must guarantee a sufficient amount of variety among the candidate actions of each abstract state. This can be seen as a trade-off between (passive) exploration and precision. The state partition should be chosen so as to optimize this trade-off, which may require an adaptive discretization schedule. We leave the theoretical study of this problem as future work, instead providing a sensitivity analysis to grid resolution in Section~\ref{sec:exp}.
+
+
+
+\section{Algorithmic Details}\label{sec:detail}
+In this section, we provide further details on our implementation of the different phases of DPO.
+
+%\subsection{State Discretization}
+\paragraph{State aggregation:}
+As mentioned, we discretize the state space $\Sspace$ into a regular grid $\Xspace$, in which each hyperrectangular cell is an abstract state. 
+%We assume that the domain of each state variable is a continuous interval. If a variable is unbounded or the bounds are unknown, they are set equal to the minimum and maximum value, relative to the corresponding dimension, observed in the collected samples. 
+%For each dimension $i$, we obtain in input a scalar $k$ that indicates the number of subsets in which the $i-th$ dimension of the state space $S$ has to be divided. We consider once per time each dimension $i$ and we divide this mono-dimensional space in a partition of $k$ convex subsets with a constant diameter. By partitioning in this way, the size of the subset's bounds on each dimension can be very different. 
+%We allow specifying a different spacing for each dimension.
+If the original state space $\Sspace$ contains an absorbing state, we add an absorbing abstract state to $\Xspace$. This can be useful for modeling indefinite-horizon tasks.
+%The state space partition does not need to be the same across the different iterations of the algorithm, since a new $\delta$-MDP is built at each iteration. For instance, the partition can change when the grid bounds are computed from samples. If we want to keep a fixed partition for computational reasons, we may obtain some samples whose starting states are outside the grid. Those samples are assigned to the closest cell.
+If naively implemented, this aggregation strategy is clearly subject to the \textit{curse of dimensionality}. However, only the abstract states that are actually visited by $\pi_{\vtheta}$ are considered in the next steps of the algorithm, so the size of the $\delta$-MDP is polynomial in the number of collected samples\footnote{Efficiently exploring high-dimensional state spaces is still a difficult problem.}.  
+More details on how the abstract state space is constructed and other possible aggregation strategies are given in Appendix~\ref{sec:app2}.
+
+%\subsection{$\delta$-MDP Estimation}
+\paragraph{Abstract MDP estimation:}\label{sec:mdpest}
+%A fundamental aspect in the creation of the $\delta$-MDP is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\pi}(s)$.
+To construct the $\delta^{\vtheta}$-MDP for the current policy $\pi_{\vtheta}$, we need to estimate the abstract reward function $\wt{R}_{\vtheta}$ and the abstract transition function $\wt{P}_{\vtheta}$. Their exact computation would require knowledge of the future state distribution $\delta^{\vtheta}$, which is out of reach. %As we said, $\delta^{\pi}(s)$ is used to define $w(s)$ that weighs the abstract functions $\wt{R}_{\vtheta}(X, a)$ and $\wt{P}_{\vtheta}(X'|X, a)$ of the $\delta$-MDP. 
+However, we can write the abstract functions as expected values:
+\begin{align}
+\wt{R}_{\vtheta}(X, a) &= \EV_{s \sim p(s | X)} R(s, a) \label{eq:mcr}\\
+\wt{P}_{\vtheta}(X' | X, a) &= \EV_{s \sim p(s | X)} \int_{X'} P(s' | s, a) \de s'\label{eq:mcp}
+\end{align}
+where $p(s | X) = Z_{\vtheta}(X)^{-1}\delta^{\vtheta}(s)\Ind_X(s)$ is the probability of visiting state $s$ conditioned by $s\in X$, and $\Ind_X(\cdot)$ is the indicator function for set $X$.
+In this way, we can simply estimate the abstract function via Monte Carlo estimation using the samples collected with $\pi_{\vtheta}$, since the visited states are distributed as $\delta^{\vtheta}$.
+%\begin{align*}
+%\wt{R}_{\vtheta}(X, a) &= \frac{1}{|\widetilde{s} \in X|} \sum_{\widetilde{s} \in X}R(\widetilde{s}, a)\\
+%\wt{P}_{\vtheta}(X'|X,a) &= \frac{1}{|\widetilde{s} \in X|} \sum_{\widetilde{s} \in X} \int_{x'} P(s' | \widetilde{s}, a) \,ds
+%\end{align*}
+%The estimated $\delta^{\pi}(s)$ results to be equal to $\frac {|s|} {|\widetilde{s} \in X|}$, where $s \in X$ and we indicate with $\widetilde{s}$ a generic sampled state.
+While this is enough for $\wt{R}_{\vtheta}(X, a)$, since $R(s, a)$ is known, estimating $\wt{P}_{\vtheta}(X'|X, a)$ for all abstract states and actions without knowledge of $P(\cdot|s, a)$ requires more effort. All we get from agent-environment interactions is a finite set of samples $(s,a,s')$. This means that, for almost all the actions in $\Aspace$, we do not have any samples. Fortunately, we can leverage our Lipschitz assumptions to fill in this missing information.
+%
+Let us first consider deterministic environments, where $P(\cdot|s, a)$ is a Dirac delta function that exactly identifies the next state $s'$ resulting from a state-action pair $(s,a)$. For simplicity, we denote this deterministic mapping as $f:\Sspace\times\Aspace\to\Sspace$ and write $s'=f(s,a)$.
+Let $\Delta(s, a) \coloneqq f(s) - s$ be the state difference obtained transitioning from pair $(s,a)$. From Assumption~\ref{ass:lipmdp}, fixed an action $a\in\Aspace$, we obtain:
+%
+\begin{align}\label{eq:deltas}
+\norm{\Delta (s, a) - \Delta (\widetilde{s}, a)} \leq L_{\Delta}\norm{s - \widetilde{s}},
+\end{align}
+%
+for all $s,\wt{s}\in\Sspace$, hence the state difference is also Lipschitz continuous. A valid Lipschitz constant $L_{\Delta}$ can be obtained from Assumption~\ref{ass:lipmdp} as $(1+L_{P})$. Under additional assumptions, such as the linearity of the transition function, we can obtain constants less than one or even zero. The latter happens when the state difference depends only on the action, which can be realistic, or at least a good approximation, for some continuous control problems. We discuss these different settings and provide detailed computations in Appendix~\ref{sec:app2}.
+%
+When $L_{\Delta}=0$, we can easily generate extra "fictitious" samples. For instance, given sample $(s,a,s')$, we can generate $(\wt{s},a,\wt{s}')$ for any other state $\wt{s}\in\Sspace$ by setting $\wt{s}' = \wt{s} + (s'-s)$. This way, for each action $a$ performed by policy $\pi_{\vtheta}$ in abstract state $X$, we can have several (fictitious) samples (one for each visited state $s\in X$). With these samples, we can simply estimate $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the next states that fall into $X'$.
+When $L_{\Delta}\neq 0$, we can still use~\eqref{eq:deltas} to get a region containing $\wt{s}'$.
+%\begin{align}
+%	\norm{\wt{s}' - \left(\wt{s}+(s-s')\right)} \leq L_{\Delta}\norm{s-\wt{s}}.
+%\end{align}
+From this, we can estimate lower and upper bounds on the transition function. As a result, the $\delta$-MDP will be a \textit{Bounded MDP}~\citep{givan2000bounded} instead of a regular one.
+%
+In the case of stochastic environments, we follow a different approach for estimating the abstract transition kernel. We define a maximum-likelihood problem using data sampled from $\pi_{\vtheta}$ \textit{and} fictitious samples. We then add special constraints to this problem as to enforce the Lipschitz continuity of $\wt{P}_{\vtheta}(X'|X,a)$ \wrt actions. The resulting problem is still convex and can be solved with standard optimization tools.
+%the estimation of $\wt{P}_{\vtheta}(X'|X, a)$ is performed by solving a constrained optimization problem whose goal is to maximize the likelihood of the samples collected. The constraints reflect the Lipschitz properties of $\wt{P}_{\vtheta}(X'|X,a)$: the distance between $\wt{P}_{\vtheta}(X'|X, a)$ and $\wt{P}_{\vtheta}(X'|X, \widetilde{a})$ is bound by a $f(d_A(a, \widetilde{a}))$.
+Details on bounded-MDPs, their solution and the constrained optimization approach are provided in Appendix~\ref{sec:app2}. 
+
+%\subsection{Value Iteration on $\delta$-MDP}
+\paragraph{Solving the abstract MDP:}
+In the previous paragraph, we have proposed a way to estimate the abstract transition function for state-action pairs not experienced by the agent, by exploiting the assumptions about the regularity of the environment. However, this still applies only to the actions actually performed by the agent. As a result, our approximation of the $\delta$-MDP has a finite action set. This introduces a further model bias, but allows us to employ dynamic programming to find the optimal abstract policy. This kind of error can be reduced by increasing the number of collected episodes, or the control frequency. Furthermore, under our Lipschitz assumptions, the finite actions actually performed by the agent are supposedly good representatives for the other ones.
+We solve this approximate $\delta$-MDP via value iteration~\citep{bertsekas1996neuro}, with a stopping condition on the max-norm distance between consecutive state-value functions.
+%For computational reasons, the value iteration on the $\delta$-MDP is performed with two exit conditions. These conditions involve a maximum number of iterations allowed in a single value iteration and a parameter $\epsilon$, used as a treshold in the following way: said $V_i(X)$ the value function of state $X$ at the $i-th$ iteration, if $\forall X \in %\Xspace% 
+%X |V_i(X) - V_{i-1}(X)| < \epsilon$ the value iteration terminates.
+%In the case of multiple optimal policies, we store the complete set of optimal actions for each abstract state. This allows for easier projection, as explained in the next paragraph.
+We may need to evaluate abstract states for which no samples have been collected by the agent. We propose a risk-averse solution, which consists of considering these "unknown" abstract states as absorbing and set their value to the lowest known value. 
+%This strategy follows a risk-minimization principle: to discourage actions that could bring the agent in unexplored macrostates. If the macrostate is worth it, the agent should be able to reach it in more time but in a safe manner. 
+
+%\subsection{Projection on Parametric Space $\theta$}
+\paragraph{Projection:}
+Given the optimal abstract policy $\rho^*$, its concretization $\Conc\rho^*$ is easily obtained by copying the action selected by $\rho^{*}$ for all the states of the same abstract state. We then need to represent $\Conc\rho^{*}$ in the space $\Pi_{\Theta}$ of the original policy $\pi_{\vtheta}$. As indicated by Theorem~\ref{lem:boundj}, this projection phase can be approached as a regression problem, where the target for $\pi_{\vtheta'}(s)$ is $\Conc\rho^*(s)$. 
+%When multiple optimal actions are available for the same abstract state, we consider as a target the error-minimizing one, in order to facilitate the projection. 
+The first term from~\eqref{eq:proj} is the RMSE loss, weighted by the future state distribution $\delta^{\vtheta}$. For differentiable policies (including neural networks), this loss can be minimized via gradient descent from the samples collected with $\pi_{\vtheta}$. The second term from~\eqref{eq:proj} penalizes solutions that are too far from the current policy parameters and it can be used as a regularization term. In practice, the regularization coefficient $\lambda$ can be tuned as a meta-parameter. Note that, without this projection step, there would be no room for further policy improvement, as the next $\delta$-MDP would have just one action per abstract state. The projection error actually allows the agent to evaluate new actions and visit new regions of the state space. 
