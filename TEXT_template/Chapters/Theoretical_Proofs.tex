@@ -1,0 +1,212 @@
+\chapter{Theoretical Proofs}
+
+The following lower bound
+%, based on the Performance Difference Lemma~\citep{kakade2002approximately}, 
+justifies the proposed approach under the Lipschitz assumptions:
+%
+\begin{restatable}{theorem}{boundj}\label{lem:boundj}
+	For any deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$, state partition $\Xspace$ and deterministic abstract policy ${\rho:\Xspace\to\Aspace}$, let $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho)$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}:
+	\begin{align*}
+	&J(\vtheta') - J(\vtheta) \geq \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s 
+	\nonumber\\&\qquad- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
+	-\frac{L_{\text{shift}}}{1-\gamma} \norm{\vtheta'-\vtheta},
+	\end{align*}
+	where $L_{\text{shift}}=L_{\delta^{\vtheta}}\left(L_{Q^{\vtheta}}\left(1+L_{\pi_{\vtheta'}}\right)+L_{V^{\vtheta}}\right)$, $L_{\delta^{\vtheta}}$ is from Lemma~\ref{lem:lipfut}, and $L_{Q^{\vtheta}}$, $L_{V^{\vtheta}}$ are from Lemma~\ref{lem:lipval}. 
+\end{restatable}
+
+This lower bound on performance improvement can serve as a surrogate optimization objective. In particular, the first term provides a criterion for selecting the abstract policy $\rho$, while the remaining terms provide a principled way to project it back into the original policy space. 
+We will perform these two tasks separately. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
+First, let us consider the projection part: 
+\begin{align}\label{eq:proj}
+\min_{\vtheta'\in\Theta} \norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
++ \lambda\norm{\vtheta'-\vtheta},
+\end{align}
+where $\lambda=L_{\text{shift}}\big/L_{Q^{\vtheta}}$. The first term accounts for the difference between the piecewise-constant policy and the updated parametric policy. It would be minimized by an exact projection. Since the error is weighted by the future-state distribution, we can use the samples collected with the original deterministic policy to approximately perform the projection, which is a regression problem. The second term accounts for the distributional mismatch between the future-state distributions of the two parametric policies. It can be added as a regularization term in the regression. More details on this projection phase are provided in the next section.
+%
+For the rest of this section, we will focus on the problem of selecting the best abstract policy: 
+%
+\begin{align}
+\max_{\rho:\Xspace\to\Aspace}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s,
+\end{align}
+%
+and show that the optimal policy of the $\delta$-MDP is indeed a reasonable choice. This problem has no trivial solution, as we do not know the advantage function $A^{\vtheta}$, and estimating it for all (infinite) states and actions with our limited samples is out of reach. Let us first define the equivalent maximization problem:
+\begin{align}\label{eq:W}
+\max_{\rho:\Xspace\to\Aspace} \sum_{X\in\Xspace}W^{\rho}(X),
+\end{align}
+where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$, obtained by observing that $V^{\vtheta}$ does not depend on $\rho$. This is equivalent to finding, for each abstract state $X\in\Xspace$, the action that maximizes $W^{\rho}(X)$. In DPO, we solve the $\delta$-MDP for an optimal (deterministic) abstract policy $\rho^{*}$, which maximizes the value function $V^{\rho}(X)$ for all $X\in\Xspace$. The following Theorem establishes the similarity of $W^{\rho}$ with $V^{\rho}$ under the Lipschitz assumptions, justifying our approach: 
+%
+\begin{restatable}{theorem}{surr}\label{lem:surr}
+	Fixed a deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$ and a state partition $\Xspace$, for any deterministic abstract policy $\rho:\Xspace\to\Aspace$, let $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $X\in\Xspace$, provided $\rho(X) \in \pi_{\vtheta}(X)$:
+	\begin{align*}
+	|W^{\rho}(X) - V^{\rho}(X)| \leq \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
+	%\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X'),
+	\end{align*}
+	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$, $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
+\end{restatable}
+%
+An immediate consequence is that: 
+\begin{align}\label{eq:wstar}
+W^{\rho^*}(X) \geq V^{\rho^*}(X) - \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
+\end{align}
+\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-MDP as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$, to our surrogate objective from Theorem~\ref{lem:boundj}.
+%
+These theoretical bounds justify our definition of $\delta$-MDP and how we use the optimal abstract policy to update the original parameters.
+In addition, this analysis provides some insight into how choosing the partition $\Xspace$ affects the optimization problem. From~\eqref{eq:wstar}, it would seem that a finer discretization is always better. However, an important assumption of Theorem~\ref{lem:surr} suggests that this is not the case: for the error bound to hold, $\rho$ must be chosen so that, for all $X\in\Xspace$, $\rho(X)$ belongs to $\pi_{\vtheta}(X)$, the subset of actions performed by the original policy $\pi_{\vtheta}$ in the states of $X$. This additional constraint on the abstract policy is necessary to keep the discretization error under control, but it introduces a further \textit{model bias} in the solution of the policy optimization problem, since the optimum over the complete action space may no longer be attainable. This bias is larger when the restricted action sets are smaller, which may result from very fine discretizations. 
+%
+Intuitively, we must guarantee a sufficient amount of variety among the candidate actions of each abstract state. This can be seen as a trade-off between (passive) exploration and precision. The state partition should be chosen so as to optimize this trade-off, which may require an adaptive discretization schedule. We leave the theoretical study of this problem as future work, instead providing a sensitivity analysis to grid resolution in Section~\ref{sec:exp}.
+
+\subsection{Proofs}
+In this section, we provide complete proofs for the formal statements presented in the paper. To do so, we also state and prove some auxiliary lemmas. 
+First, we denote with $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(s)$ the advantage function of policy $\pi_{\vtheta}$. This function is Lipschitz \wrt states and actions:
+\begin{restatable}{lemma}{adv1}\label{lem:adv1}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta\in\Theta$, $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
+	\begin{align*}
+	\left|A^{\vtheta}(s,a) - A^{\vtheta}(\wt{s},\wt{a})\right| \leq L_{Q^{\vtheta}}\norm{a-\wt{a}} + \left(L_{Q^{\vtheta}} + L_{V^{\vtheta}}\right)\norm{s-\wt{s}},
+	\end{align*}
+	where $L_{Q^{\vtheta}}$ and $L_{V^{\vtheta}}$ are from Lemma~\ref{lem:lipval}.
+\end{restatable}
+\begin{proof}
+	\begin{align}
+	\left|A^{\vtheta}(s,a) - A^{\vtheta}(\wt{s},\wt{a})\right| &\leq \left|Q^{\vtheta}(s,a) - V^{\vtheta}(s) - Q^{\vtheta}(\wt{s},\wt{a}) + V^{\vtheta}(\wt{s})\right| \nonumber\\
+	%
+	&\leq \left|Q^{\vtheta}(s,a) - Q^{\vtheta}(\wt{s},\wt{a})\right| + \left|V^{\vtheta}(s) - V^{\vtheta}(\wt{s})\right| \nonumber\\
+	%
+	&\leq L_{Q^{\vtheta}}\left(\norm{s-\wt{s}} + \norm{a-\wt{a}}\right) + L_{V^{\vtheta}}\norm{s-\wt{s}} \label{p:1}\\
+	%
+	&=L_{Q^{\vtheta}}\norm{a-\wt{a}} + \left(L_{Q^{\vtheta}} + L_{V^{\vtheta}}\right)\norm{s-\wt{s}}\nonumber,
+	\end{align}
+	where~\eqref{p:1} is from Lemma~\ref{lem:lipval}.
+\end{proof}
+The following special case will be useful:
+\begin{restatable}{lemma}{adv2}\label{lem:adv2}
+	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta,\vtheta'\in\Theta$ and $s\in\Sspace$:
+	\begin{align*}
+	|A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(\wt{s},\pi_{\vtheta'}(\wt{s}))| \leq L_{A^{\vtheta}_{\vtheta'}}\norm{s-\wt{s}},
+	\end{align*}
+	where $L_{A^{\vtheta}_{\vtheta'}}=\left(L_{Q^{\vtheta}}(1 + L_{\pi_{\vtheta'}}) + L_{V^{\vtheta}}\right)$, and $L_{Q^{\vtheta}}$, $L_{V^{\vtheta}}$ are from Lemma~\ref{lem:lipval}.
+\end{restatable}
+\begin{proof}
+	From Lemma~\ref{lem:adv1}:
+	\begin{align}
+	|A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(\wt{s},\pi_{\vtheta'}(\wt{s}))| 
+	&\leq L_{Q^{\vtheta}}\norm{\pi_{\vtheta'}(s) - \pi_{\vtheta'}(\wt{s})} + \left(L_{Q^{\vtheta}} + L_{V^{\vtheta}}\right)\norm{s-\wt{s}} \nonumber\\
+	%
+	&\leq \left(L_{Q^{\vtheta}}(1 + L_{\pi_{\vtheta'}}) + L_{V^{\vtheta}}\right)\norm{s-\wt{s}},
+	\end{align}
+	where the last inequality is from Assumption~\ref{ass:lippol}.
+\end{proof}
+We can now prove the main Theorem:
+\boundj*
+\begin{proof}
+	From the Performance Improvement Lemma~\citep{kakade2002approximately}:
+	\begin{align}
+	J(\vtheta') - J(\vtheta) 
+	&=\frac{1}{1-\gamma} \int_{\Sspace}\delta^{\vtheta'}(s)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \nonumber \\
+	%
+	&= \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)A^{\vtheta}(s,\Conc\rho(s))\de s 
+	+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s
+	\nonumber\\&\qquad+
+	\frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \nonumber\\		
+	%
+	&= \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
+	+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s 
+	\nonumber\\&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:2}\\
+	%
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
+	- \frac{1}{1-\gamma}L_{Q^{\vtheta}}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s
+	\nonumber\\&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:3}\\
+	%
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
+	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s
+	\nonumber\\&\qquad-\frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \label{p:4}\\
+	%
+	&=  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
+	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)}
+	\nonumber\\&\qquad-\frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \nonumber\\
+	%
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
+	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)}
+	\nonumber\\&\qquad-\frac{L_{\delta}L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\norm{\vtheta'-\vtheta},\nonumber
+	\end{align}
+	where~\eqref{p:2} if from the fact that $\Xspace$ is a partition of $\Sspace$ and $\Conc\rho (s) = \rho(X)$ for all $s\in X$; \eqref{p:3} is from Lemma~\ref{lem:adv1} with $\wt{s}=s$, $a=\pi_{\vtheta'}(s)$ and $\wt{a}=\Conc\rho(s)$; \eqref{p:4} is from Lemma~\ref{lem:adv2} and the definition of the Kantorovich distance; and the last inequality is from Lemma~\ref{lem:lipfut}.
+\end{proof}
+
+We now establish a relationship between the surrogate objective $W^{\rho}(X)$ and the value function of the current policy in the original MDP:
+
+\begin{restatable}{lemma}{aux1}\label{lem:aux1}
+	Fixed a deterministic parametric policy $\pi_{\vtheta}:\Sspace\to\Aspace$ and a state partition $\Xspace$, for any deterministic abstract policy $\rho:\Xspace\to\Aspace$, let $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $X\in\Xspace$, provided $\rho(X) \in \pi(X)$, and for all $s\in X$:
+	\begin{align*}
+	|V^{\vtheta}(s) - W^{\rho}(X)| \leq L_{V^{\vtheta}}D(X),
+	\end{align*}
+	where $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval}.
+\end{restatable}
+\begin{proof}
+	\begin{align}
+	|V^{\vtheta}(s) - W^{\rho}(X)| 
+	&= Z_{\vtheta}(X)^{-1}\left|\int_{X}\delta^{\vtheta}(s')\left(V^{\vtheta}(s) - Q^{\vtheta}(s',\rho(X))\right)\de s'\right| \label{p:5}\\
+	%
+	&= Z_{\vtheta}(X)^{-1}\left|\int_{X}\delta^{\vtheta}(s')\left(Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right)\de s'\right| \nonumber\\
+	%
+	&\leq Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \nonumber\\
+	%
+	&\leq \left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s,\rho(X))\right| +  Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\rho(X)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \label{p:6}\\
+	%
+	&\leq L_{Q^{\vtheta}}D(\pi_{\vtheta}(X)) +  L_{Q^{\vtheta}}D(X) \label{p:7}\\
+	%
+	&\leq L_{Q^{\vtheta}}(1+L_{\pi_{\vtheta}})D(X) \label{p:8}\\
+	%
+	&= L_{V^{\vtheta}}D(X),\label{p:9}
+	\end{align}
+	where~\eqref{p:5} is from the definition of $W^{\rho}(X)$; \eqref{p:6} is obtained by applying the triangular inequality after adding and subtracting $Q^{\vtheta}(s,\rho(X))$; \eqref{p:7} is from Lemma~\ref{lem:lipval} and the fact that both $\pi_{\vtheta}(s)$ and $\rho(X)$ belong to $\pi_{\vtheta}(X)$, and all the considered states belong to $X$; \eqref{p:8} if from Assumption~\ref{ass:lippol} since: 
+	\begin{align}
+	D(\pi_{\vtheta}(X)) = \sup_{a,\wt{a}\in\pi_{\vtheta}(X)}\norm{a-\wt{a}} = \sup_{s,\wt{s}\in X}\norm{\pi_{\vtheta}(s)-\pi_{\vtheta}(\wt{s})} \leq L_{\pi_{\vtheta}}\sup_{s,\wt{s}\in X}\norm{s-\wt{s}} = L_{\pi_{\vtheta}}D(X);
+	\end{align} 
+	and~\eqref{p:9} is from the definition of $L_{V^{\vtheta}}$ in Lemma~\ref{lem:lipval}.
+\end{proof}
+
+Finally, we can relate $W^{\rho}$ to the value function of abstract policy $\rho$ in the abstract MDP:
+
+\surr*
+\begin{proof}
+	First, by Bellman's equation:
+	\begin{align}
+	W^{\rho}(X) 
+	&= Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	%
+	&= Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)R(s,\rho(X))\de s
+	+ \gamma Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:10}\\
+	%
+	&= \wt{R}_{\vtheta}(s,\rho(X))
+	+ \gamma Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:11}\\
+	%
+	&= \wt{R}_{\vtheta}(s,\rho(X))
+	+ \gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s,\label{p:12}
+	\end{align}
+	where~\eqref{p:10} is from Bellman's equation for $Q^{\vtheta}$, \eqref{p:11} is from the definition of $\wt{R}_{\vtheta}$, and \eqref{p:12} is from the fact that $\Xspace$ is a partition of $\Sspace$.
+	Hence:
+	\begin{align}
+	|W^{\rho}(X) - V^{\rho}(X)| 
+	&= \left|\gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
+	\right.\nonumber\\&\qquad\left. 
+	- \gamma\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))V^{\rho}(X') \right| \label{p:13}\\
+	%
+	&= \gamma Z_{\vtheta}(X)^{-1}\left| \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
+	\right.\nonumber\\&\qquad\left. 
+	- \sum_{X'\in\Xspace}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\de s'\de sV^{\rho}(X') \right| \label{p:14}\\
+	%
+	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') - V^{\rho}(X')\right|\de s'\de s \nonumber\\
+	%
+	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') - W^{\rho}(X')\right|\de s'\de s 
+	\nonumber\\&\qquad + 
+	\gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right|\de s'\de s \label{p:15}\\
+	%
+	&\leq \gamma L_{V^{\vtheta}}\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X')
+	\nonumber\\&\qquad + 
+	\gamma \sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right| \label{p:16}\\
+	%
+	&\leq \frac{\gamma L_{V^{\vtheta}}\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X')}{1-\gamma} \label{p:17}\\
+	%
+	&\leq \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},\nonumber
+	\end{align}
+	where~\eqref{p:13} is from~\eqref{p:12} and Bellman's equation for $V^{\rho}$ (the abstract reward terms cancel out); \eqref{p:14} is from the definition of $\wt{P}_{\vtheta}$; \eqref{p:15} is obtained by applying the triangular inequality after adding and subtracting $W^{\rho}(X)$; \eqref{p:16} is from Lemma~\ref{lem:aux1} and the definition of $\wt{P}_{\vtheta}$; \eqref{p:17} is by recursion on $\left|W^{\rho}(X)-V^{\rho}(X)\right|$; and the last inequality is from the definition of $D_{\max}$.
+\end{proof}
