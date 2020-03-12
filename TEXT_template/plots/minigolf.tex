@@ -1,0 +1,137 @@
+\documentclass[margin=.5mm]{standalone}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.8}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{matrix}
+\usetikzlibrary{intersections}
+
+%COLORS
+\definecolor{brightBlue}{RGB}{68, 119, 170}
+\definecolor{brightCyan}{RGB}{102, 204, 238}
+\definecolor{brightGreen}{RGB}{34, 136, 51}
+\definecolor{brightYellow}{RGB}{204, 187, 68}
+\definecolor{brightRed}{RGB}{238, 102, 119}
+\definecolor{brightPurple}{RGB}{170, 51, 119}
+\definecolor{brightGrey}{RGB}{187, 187, 187}
+
+\definecolor{vibrantBlue}{RGB}{0, 119, 187}
+\definecolor{vibrantCyan}{RGB}{51, 187, 238}
+\definecolor{vibrantTeal}{RGB}{0, 153, 136}
+\definecolor{vibrantOrange}{RGB}{238, 119, 51}
+\definecolor{vibrantRed}{RGB}{204, 51, 17}
+\definecolor{vibrantMagenta}{RGB}{238, 51, 119}
+\definecolor{vibrantGrey}{RGB}{100, 100, 100}
+
+\pgfplotsset{
+	label style={font=\LARGE},
+	tick label style={font=\LARGE},
+	legend style={at={(0.97,0.38)}} 
+}
+
+
+\begin{document}
+\begin{tikzpicture}
+  % Read the file
+  % if needed, define column separators by pgfplotstableread[col sep=...]{}{}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_dpo_perf.csv}{\DPO}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_bdpo_perf.csv}{\BDPO}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_reinforcep_perf.csv}{\RP}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_reinforcef_perf.csv}{\RF}
+ 
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_dpo_fail.csv}{\DPOx}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_bdpo_fail.csv}{\BDPOx}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_reinforcep_fail.csv}{\RPx}
+ \pgfplotstableread[col sep = comma]{../data/minigolf019/minigolf_reinforcef_fail.csv}{\RFx}
+ 
+ 
+ 
+ \begin{groupplot}[
+     group style = {group size = 2 by 1, horizontal sep=2cm},
+    ]
+    % Performance
+    \nextgroupplot[ymin=-8.75,ymax=-0.75,xlabel=Iterations, ylabel=Average Return]
+      %DPO
+      \addplot[thick, vibrantTeal, mark=diamond, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\DPO};\label{plots:dpo}
+      \addplot[name path=low, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\DPO};
+      \addplot[name path=high, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\DPO};
+  	  \addplot[color = vibrantTeal, opacity=0.25, forget plot] fill between[ 
+		of = low and high
+	   ];
+	   %DPO-BMDP
+	   \addplot[thick, vibrantOrange, mark = o, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\BDPO};\label{plots:bdpo}
+	   \addplot[name path=low, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\BDPO};
+	   \addplot[name path=high, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\BDPO};
+	   \addplot[color = vibrantOrange, opacity=0.25, forget plot] fill between[ 
+	   of = low and high
+	   ];
+	   %REINFORCE
+	   \addplot[thick, vibrantBlue, mark = square, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\RP};\label{plots:rp}
+	   \addplot[name path=low, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\RP};
+	   \addplot[name path=high, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\RP};
+	   \addplot[color = vibrantBlue, opacity=0.25, forget plot] fill between[ 
+	   of = low and high
+	   ];
+	   %REINFORCE less failures
+	  \addplot[thick, vibrantMagenta, mark = triangle, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\RF};\label{plots:rf}
+	  \addplot[name path=low, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\RF};
+	  \addplot[name path=high, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\RF};
+	  \addplot[color = vibrantRed, opacity=0.25, forget plot] fill between[ 
+	  of = low and high
+	  ];
+	  \coordinate (top) at (rel axis cs:0,1);% coordinate at top of the first plot
+	  \addlegendentry{DPO ($L_{\Delta}=0$)}
+	  \addlegendentry{DPO ($L_{\Delta}=0.3$)}
+	  \addlegendentry{REINFORCE}
+	  \addlegendentry{REINFORCE*}
+	%Failures:
+	    \nextgroupplot[ymin=-4,ymax=29,xlabel=Iterations, ylabel=Failures]
+	%DPO
+	\addplot[thick, vibrantTeal, mark=diamond, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\DPOx};\label{plots:sepgx}
+	\addplot[name path=low, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\DPOx};
+	\addplot[name path=high, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\DPOx};
+	\addplot[color = vibrantTeal, opacity=0.25, forget plot] fill between[ 
+	of = low and high
+	];
+	%REINFORCE 
+	\addplot[thick, vibrantBlue, mark = square, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\RPx};\label{plots:sepgbudx}
+	\addplot[name path=low, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\RPx};
+	\addplot[name path=high, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\RPx};
+	\addplot[color = vibrantBlue, opacity=0.25, forget plot] fill between[ 
+	of = low and high
+	];
+	%REINFORCE less failures
+	\addplot[thick, vibrantMagenta, mark = triangle, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\RFx};\label{plots:adastepx}
+	\addplot[name path=low, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\RFx};
+	\addplot[name path=high, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\RFx};
+	\addplot[color = vibrantMagenta, opacity=0.25, forget plot] fill between[ 
+	of = low and high
+	];
+	%DPO BMDP
+	\addplot[thick, vibrantOrange, mark = o, mark repeat = 100, mark size = 4pt] table [x index={0}, y index={1}] {\BDPOx};\label{plots:bdpox}
+	\addplot[name path=low, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\BDPOx};
+	\addplot[name path=high, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\BDPOx};
+	\addplot[color = vibrantOrange, opacity=0.25, forget plot] fill between[ 
+	of = low and high
+	];
+      \coordinate (bot) at (rel axis cs:1,0);% coordinate at bottom of the last plot
+  \end{groupplot}
+  % legend
+%  \path (top|-current bounding box.north)--
+%  coordinate(legendpos)
+%  (bot|-current bounding box.north);
+%  \matrix[
+%  matrix of nodes,
+%  anchor=south,
+%  draw,
+%  inner sep=0.2em,
+%  draw
+%  ]at([yshift=1ex]legendpos)
+%  {
+%  	&[5pt]\ref{plots:dpo}& \LARGE DPO&[15pt]
+%  	\ref{plots:bdpo}&\LARGE DPO (BMDP)&[15pt]
+%  	\ref{plots:rp}&\LARGE REINFORCE&[15pt]
+%  	\ref{plots:rf}&\LARGE REINFORCE*&[5pt]\\};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,101 @@
+\documentclass[margin=.5mm]{standalone}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.8}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{matrix}
+\usetikzlibrary{intersections}
+
+%COLORS
+\definecolor{brightBlue}{RGB}{68, 119, 170}
+\definecolor{brightCyan}{RGB}{102, 204, 238}
+\definecolor{brightGreen}{RGB}{34, 136, 51}
+\definecolor{brightYellow}{RGB}{204, 187, 68}
+\definecolor{brightRed}{RGB}{238, 102, 119}
+\definecolor{brightPurple}{RGB}{170, 51, 119}
+\definecolor{brightGrey}{RGB}{187, 187, 187}
+
+\definecolor{vibrantBlue}{RGB}{0, 119, 187}
+\definecolor{vibrantCyan}{RGB}{51, 187, 238}
+\definecolor{vibrantTeal}{RGB}{0, 153, 136}
+\definecolor{vibrantOrange}{RGB}{238, 119, 51}
+\definecolor{vibrantRed}{RGB}{204, 51, 17}
+\definecolor{vibrantMagenta}{RGB}{238, 51, 119}
+\definecolor{vibrantGrey}{RGB}{100, 100, 100}
+
+\pgfplotsset{
+	label style={font=\LARGE},
+	tick label style={font=\LARGE},
+	legend style={at={(0.97,0.37)}}
+}
+
+
+\begin{document}
+\begin{tikzpicture}
+  % Read the file
+  % if needed, define column separators by pgfplotstableread[col sep=...]{}{}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_dpo3_perf.csv}{\THREE}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_dpo5_perf.csv}{\FIVE}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_dpo7_perf.csv}{\SEVEN}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_dpo9_perf.csv}{\NINE}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_dpo13_perf.csv}{\THIRTEEN}
+ \pgfplotstableread[col sep = comma]{../data/mass/doubleintegrator_pgpe_final_perf.csv}{\PGPE}
+ 
+\begin{groupplot}[
+     group style = {group size = 2 by 1, horizontal sep=2.5cm},
+    ]
+    % Performance
+    \nextgroupplot[ymin=-6,ymax=-1,xlabel=Iterations, ylabel=Average Return]
+        %DPO 3x3
+	    \addplot[thick, vibrantMagenta, mark=triangle, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\THREE};\label{plots:3}
+	    \addplot[name path=low, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\THREE};
+	    \addplot[name path=high, color=vibrantMagenta, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\THREE};
+	    \addplot[color = vibrantMagenta, opacity=0.25, forget plot] fill between[ 
+	    of = low and high
+	    ];
+%      %DPO 5x5
+%      \addplot[thick, vibrantCyan, mark=x, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\FIVE};\label{plots:5}
+%      \addplot[name path=low, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\FIVE};
+%      \addplot[name path=high, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\FIVE};
+%      \addplot[color = vibrantCyan, opacity=0.25, forget plot] fill between[ 
+%      of = low and high
+%      ];
+%      %DPO 7x7
+%      \addplot[thick, vibrantBlue, mark=o, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\SEVEN};\label{plots:7}
+%      \addplot[name path=low, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\SEVEN};
+%      \addplot[name path=high, color=vibrantBlue, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\SEVEN};
+%  	  \addplot[color = vibrantBlue, opacity=0.25, forget plot] fill between[ 
+%		of = low and high
+%	   ];
+	   %DPO 9x9
+	  \addplot[thick, vibrantTeal, mark = diamond, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\NINE};\label{plots:9}
+	  \addplot[name path=low, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\NINE};
+	  \addplot[name path=high, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\NINE};
+	  \addplot[color = vibrantTeal, opacity=0.25, forget plot] fill between[ 
+	  of = low and high
+	  ];
+	  %DPO 13x13
+	  \addplot[thick, vibrantOrange, mark = o, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\THIRTEEN};\label{plots:13}
+	  \addplot[name path=low, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\THIRTEEN};
+	  \addplot[name path=high, color=vibrantOrange, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\THIRTEEN};
+	  \addplot[color = vibrantOrange, opacity=0.25, forget plot] fill between[ 
+	  of = low and high
+	  ];
+	  %PGPE
+	  \addplot[thick, vibrantCyan, mark = square, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\PGPE};\label{plots:rp}
+	  \addplot[name path=low, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\PGPE};
+	  \addplot[name path=high, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\PGPE};
+	  \addplot[color = vibrantCyan, opacity=0.25, forget plot] fill between[ 
+	  of = low and high
+	  ];
+	  \coordinate (top) at (rel axis cs:0,1);% coordinate at top of the first plot
+\addlegendentry{DPO 3x3}
+%\addlegendentry{DPO 5x5}
+%\addlegendentry{DPO 7x7}
+\addlegendentry{DPO 9x9}
+\addlegendentry{DPO 13x13}
+\addlegendentry{PGPE}
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

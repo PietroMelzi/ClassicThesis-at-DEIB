@@ -1,0 +1,66 @@
+\documentclass[margin=.5mm]{standalone}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.8}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{matrix}
+\usetikzlibrary{intersections}
+
+%COLORS
+\definecolor{brightBlue}{RGB}{68, 119, 170}
+\definecolor{brightCyan}{RGB}{102, 204, 238}
+\definecolor{brightGreen}{RGB}{34, 136, 51}
+\definecolor{brightYellow}{RGB}{204, 187, 68}
+\definecolor{brightRed}{RGB}{238, 102, 119}
+\definecolor{brightPurple}{RGB}{170, 51, 119}
+\definecolor{brightGrey}{RGB}{187, 187, 187}
+
+\definecolor{vibrantBlue}{RGB}{0, 119, 187}
+\definecolor{vibrantCyan}{RGB}{51, 187, 238}
+\definecolor{vibrantTeal}{RGB}{0, 153, 136}
+\definecolor{vibrantOrange}{RGB}{238, 119, 51}
+\definecolor{vibrantRed}{RGB}{204, 51, 17}
+\definecolor{vibrantMagenta}{RGB}{238, 51, 119}
+\definecolor{vibrantGrey}{RGB}{100, 100, 100}
+
+\pgfplotsset{
+	label style={font=\LARGE},
+	tick label style={font=\LARGE},
+	legend style={at={(0.97,0.22)}}
+}
+
+
+\begin{document}
+\begin{tikzpicture}
+  % Read the file
+  % if needed, define column separators by pgfplotstableread[col sep=...]{}{}
+ \pgfplotstableread[col sep = comma]{../data/recover/faultyreach_dpo_perf.csv}{\DPO}
+ \pgfplotstableread[col sep = comma]{../data/recover/faultyreach_pgpe_final_perf.csv}{\PGPE}
+ 
+\begin{groupplot}[
+     group style = {group size = 2 by 1, horizontal sep=2.5cm},
+    ]
+    % Performance
+    \nextgroupplot[ymin=2.6,ymax=4.8,xlabel=Iterations, ylabel=Average Return]
+      %DPO
+      \addplot[thick, vibrantTeal, mark=diamond, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\DPO};\label{plots:dpo}
+      \addplot[name path=low, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\DPO};
+      \addplot[name path=high, color=vibrantTeal, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\DPO};
+      \addplot[color = vibrantTeal, opacity=0.25, forget plot] fill between[ 
+      of = low and high
+      ];
+      %PGPE
+      \addplot[thick, vibrantCyan, mark=square, mark repeat = 10, mark size = 4pt] table [x index={0}, y index={1}] {\PGPE};\label{plots:pgpe}
+		\addplot[name path=low, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={2}] {\PGPE};
+		\addplot[name path=high, color=vibrantCyan, opacity=0.3, forget plot] table [x index={0}, y index={3}] {\PGPE};
+		\addplot[color = vibrantCyan, opacity=0.25, forget plot] fill between[ 
+		of = low and high
+		];
+	\addplot[dashed, very thick, black] coordinates {(0,4.464) (100,4.464)};
+	\addplot[dotted, very thick, red] coordinates {(0,3.297) (100,3.297)};
+\addlegendentry{DPO}
+\addlegendentry{PGPE}
+\end{groupplot}
+\end{tikzpicture}
+\end{document}
