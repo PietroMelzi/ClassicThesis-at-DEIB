@@ -263,8 +263,8 @@ We then add additional constraints that enforce in our estimate of $\wt{P}$ the 
 This is still a convex program and can be solved with standard optimization tools.
 In many cases, we can still generate fictitious samples as in the deterministic setting (see the next Subsection). These are simply added to the dataset $\Dataset$. 
 
-\subsection{Linear-Quadratic Gaussian Regulator}\label{sec:app2.4}
-The Double Integrator task presented in Section~\ref{sec:exp} is a special case of Linear-Quadratic Gaussian Regulator~\citep[LQG,][see Section~\ref{sec:di} for further details]{peters2002policy}. This means the transition function is linear plus an additive zero-mean Gaussian noise.
+\subsection{Linear-Quadratic Gaussian Regulator}\label{subsec:app2.4}
+The Double Integrator task presented in Section~\ref{sec:mass} is a special case of Linear-Quadratic Gaussian Regulator~\citep[LQG,]{peters2002policy}. This means the transition function is linear plus an additive zero-mean Gaussian noise.
 Since this kind of environment is stochastic, we adopt the constrained maximum-likelihood approach presented in~\ref{sec:app2.3}. 
 However, we can exploit the underlying linearity of the system to generate fictitious samples.
 For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed with equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. 
