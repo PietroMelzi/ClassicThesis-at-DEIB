@@ -1,4 +1,4 @@
-\chapter{\NoCaseChange{\acf{DPO}}} \label{chap:dpo}
+\chapter{Deterministic Policy Optimization} \label{chap:dpo}
 This is the most important chapter in our work, here we present the algorithm we designed, called \acf{DPO}. The chapter is divided in four sections: in \mySec{sec:deltamdp} we provide an explaination of the approach that we followed, motivated by the aim of this work presented in the introduction and recalled in the section, in \mySec{sec:algo} we describe the algorithm presenting a pseudocode of it. Details on how the algorithm is actually implemented are provided in \mySec{sec:detail}, while in \mySec{sec:absmdp} we explain how to address the issue of estimating the functions required by the algorithm in the different situations that there may be.
  
 \section{Passive Exploration via $\delta$-MDPs}\label{sec:deltamdp}
