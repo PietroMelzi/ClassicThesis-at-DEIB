@@ -38,11 +38,12 @@ In REINFORCE the gradient of performance $\nabla_{\theta}J(\theta)$ can be estim
 \end{align}
 where~\eqref{eq:rein} is obtained by considering $\nabla_{\theta} \log\pi_{\theta}(a|s) = \frac{\nabla_{\theta} \pi_{\theta}(a|s)}{\pi_{\theta}(a|s)}$ and $Q^{\theta}(s, a)$\hl{, usually unknown, can be replaced by an action-value function approximation.}\\
 \newline
-\hl{Given a trajectory $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$ from an episodic task, the gradient of performance can be estimated as:}
+\hl{In episodic tasks, the return $G_t$ can be computed from every time step $t$ once the episode is terminated. Then, $Q^{\theta}(s, a)$ can be approximated with $G_{t}$ for every state-action pair $(s_t, a_t)$ sampled in the trajectory. This approximation is unbiased, because $\EV_{\pi_{\theta}}[G_t | s_t, a_t] = Q^{\theta}(s_t, a_t)$.
+Given a batch of $N$ trajectories $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$ from an episodic task, the gradient of performance can be estimated as:}
 \begin{align}
-	\widehat{\nabla}_{\theta}J(\theta) = \frac{\sum_{t=0}^{T-1} \nabla_{\theta} \log\pi_{\theta}(a_t|s_t) Q^{\theta}(s_t,a_t)}{T}
+	\widehat{\nabla}_{\theta}J(\theta) = \Big\langle \sum_{t=0}^{T-1} \nabla_{\theta} \log\pi_{\theta}(a_t|s_t) G_{t} \Big\rangle_{N}, \label{eq:estrein}
 \end{align}
-\hl{In episodic tasks, the return $G_t$ can be computed from every time step $t$ once the episode is terminated. Then, $Q^{\theta}(s, a)$ can be approximated with $G_{t}$ for every state-action pair $(s_t, a_t)$ sampled in the trajectory. This approximation is unbiased, because $\EV_{\pi_{\theta}}[G_t | s_t, a_t] = Q^{\theta}(s_t, a_t)$.}\\
+\hl{where $\langle \cdot \rangle_{N}$ denotes the average of the inner expression over the $N$ trajectories.}\\
 \newline
 REINFORCE has good theoretical convergence properties: by construction, \hl{an improvement in expected performance and convergence to a local optimum under standard stochastic approximation conditions are ensured} [\cite{sutton2018reinforcement}]. However, it presents an high variance that slows the convergence process. In order to mitigate this problem, we consider \emph{baseline functions} $b: \Sspace \to \mathbb{R}$, \ie functions that don't depend on the action and can reduce variance in the estimate without introducing bias.
 Indeed, we observe that if $b(s)$ does not depend on $a$ we can modify~\eqref{eq:pgt} in the following way:
@@ -51,14 +52,15 @@ The new term appearing in~\eqref{eq:pgtbase} doesn't affect the value of gradien
 \begin{align} \int_a b(s) \nabla_{\theta} \pi(a|s) \de a = b(s) \nabla_{\theta} \int_a \pi(a|s) \de a = b(s) \nabla_{\theta} 1 = 0. \end{align}
 An intuitive baseline $b(s)$ that can be used is the value function $V^{\theta}(s)$. In some tasks, $Q^{\theta}(s,a)$ can assume high values and the use of $V^{\theta}(s)$ as baseline provides an effect of normalization. The difference in expression~\eqref{eq:pgtbase} becomes the advantage function $A^{\theta}(s,a)$ when $V$ is used as a baseline:
 \begin{align} \nabla_{\theta}J(\theta) = \int_s \delta^{\theta}(s) \int_a \nabla_{\theta} \pi(a|s) \Big( Q^{\theta}(s,a) - V^{\theta}(s) \Big) \de a \de s.\end{align}
-As a result, starting from a trajectory $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$ terminating in time step $T$, the gradient of performance is estimated as:
+In [\cite{Peters2008ReinforcementLO}] \hl{a different formulation for the estimation of gradient is provided. It is used in the \emph{GPOMDP} algorithm and reduces variance in the estimation of gradient because it prevents to sum, for each time-step, the rewards obtained from the current time-step until the end of the episode:}
 \begin{align}
-\widehat{\nabla}_{\theta}J(\theta) = \sum_{k=0}^{T-1} \nabla_{\theta}\log\pi_{\theta}(a_k|s_k)\Big(\sum_{l=k+1}^{T}\gamma^{l-1}r_{l} - b_{l} \Big),
+\widehat{\nabla}_{\theta}^{GPOMDP}J(\theta) &= \Big\langle \sum_{l=0}^{T-1} \Big( \sum_{k=0}^{l} \nabla_{\theta}\log\pi_{\theta}(a_k|s_k)\Big)\Big(\gamma^{l}r_{l+1} - b_{l} \Big)  \Big\rangle_{N}.
 \end{align}
-where the variance-minimizing baseline [\cite{Peters2008ReinforcementLO}] is: \todo{controllare indici delle formule}
-\begin{align} b_l = \frac{\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2 \gamma^{l-1}r_l} {\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2}
-\end{align} 
-This is one of the most common policy gradient algorithms and we use it in our work to compare our algorithm with a standard algorithm in policy search.
+\hl{Apart from the baseline $b_l$, this expression is equivalent to} (\ref{eq:estrein}). 
+\hl{In this work, we consider the GPOMDP estimation of gradient with the variance-minimizing baseline provided by} [\cite{Peters2008ReinforcementLO}]:
+\begin{align} b_l = \frac{\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2 \gamma^{l}r_{l+1}\Big\rangle_{N}} {\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\theta} \log\pi^{\theta}(a_k|s_k)\Big)^2\Big\rangle_{N}}
+\end{align} \todo{Come fare i quadrati? Li ho trovati scritti così in tutti i paper}
+This is one of the most common policy gradient algorithms and we use it in this work to compare our algorithm with a standard algorithm in policy search.
 
 \subsubsection{\ac{PGPE}} \label{subsec:pgpe}
 \acf{PGPE} [\cite{sehnke2008PolicyGradient}] is a method that estimates a gradient by directly sampling in parameter space. In \ac{PGPE} the policy is defined by a distribution over the parameters of deterministic controllers that we indicate with the function $\mu_{\theta}: \Sspace \to \Aspace$. At the beginning of each step, the parameter $\theta$ of the controller is sampled and then, the deterministic policy $\mu_{\theta}$ generated from $\theta$ is followed for all the episode length. Even if samples are collected with a detrministic policy, the choice of the policy is stochastic and then unexpected behaviour could arise in the task.\\

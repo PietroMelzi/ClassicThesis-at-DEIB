@@ -31,7 +31,7 @@ The behaviour of the agent is modeled with a \emph{policy} $\pi: \Sspace \mapsto
 In this work, we denote with $\pi(a|s)$ the probability of performing the action $a$ in the state $s$, according to the policy $\pi$. Since $\pi(s)$ is a distribution of probability, the following equality holds:
 \begin{align} \sum_{a \in \Aspace} \pi(a|s) = 1 \quad \forall s \in \Sspace \end{align}
 and $\pi(a|s) \geq 0 \quad \forall s \in \Sspace, a \in \Aspace$.
-\hl{If the set of actions $\Aspace$ is finite and} for each state $s \in \Sspace$ there exists an action $a$ such that $\pi(a|s) = 1$, the policy is deterministic. \hl{If the set of actions $\Aspace$ is continuous and for each state $s \in \Sspace$ the probability distribution $\pi(s)$ is a Dirac delta function, the policy is deterministic.}\\
+\hl{If the set of actions $\Aspace$ is finite and} for each state $s \in \Sspace$ there exists an action $a$ such that $\pi(a|s) = 1$, the policy is deterministic. \hl{If the set of actions $\Aspace$ is continuous and for each state $s \in \Sspace$ the probability distribution $\pi(s)$ is a Dirac delta function, the policy is deterministic. In the case of deterministic policies, $\pi(s)$ identifies the action prescribed by $\pi$ when the agent is in state $s$.}\\
 \newline
 Given a policy $\pi$, it is possible to compute, \hl{according to the policy}, the \emph{value function} $V^{\pi}: \Sspace \rightarrow \mathbb{R}$. This is a widely used function in \ac{RL} that measures how good it is for the agent to be in a given state $s \in \Sspace$, according to the expected return obtainable from that state. Since the rewards that the agent can expect to receive in the future depend on the actions taken in any state, the value function is defined with respect to policies: $V^{\pi}(s)$ is the expected sum of discounted rewards that the agent collects by starting at state $s$ and following policy $\pi$. The value function can be defined recursively via the Bellman equation: 
 \begin{align} V^{\pi}(s) = \int_{\Aspace} \pi(a|s) \Big(R(s,a) + \gamma \int_{\Sspace}P(s'|s,a)V^{\pi}(s')\de s' \Big) \de a. \label{eq:v}\end{align}
@@ -51,7 +51,7 @@ and represents the probability of being in a certain state $s$ during the execut
 \newline
 The performance measure is used to identify the optimal policy $\pi^{*}$ that we want to learn in the \ac{RL} problem as:
 \begin{align} \pi^{*} \in \arg \max_{\pi} J(\pi). \label{eq:optj}\end{align}
-\hl{To be precise, in} \ac{RL} \hl{the optimal policy $\pi^{*}$ is required to maximize the value function $V^{\pi^{*}}(s)$ (defined as in} \myEq{eq:v}\hl{) for each state $s \in \Sspace$. The methods described in} \mySubsec{subsec:dp} \hl{allow to obtain optimal policies that satisfy this property. Instead, the set of optimal policies obtained from }\myEq{eq:optj} \hl{includes policies whose value function is not maximum in every state. The criterion used to identify optimal policies in} \myEq{eq:optj} \hl{is weaker \footnote{The performance measure $J$ depends on the initial state distribution $\mu$. We consider, for instance, an \ac{MDP} whose state space $\Sspace$ is composed of two regions such that it is not possible to reach one region from the other. If the probability of being in one of these two regions is equal to zero (according to $\mu$), the policies maximizing $J$ are the ones that maximize $J$ in the visited states, regardless of their performance in the unvisited region.} than the one used in} \mySubsec{subsec:dp}\hl{, however it is appropriate in our work.}
+\hl{To be precise, in} \ac{RL} \hl{the optimal policy $\pi^{*}$ is required to maximize the value function (defined as in} \myEq{eq:v}\hl{) for each state $s \in \Sspace$. The methods described in} \mySubsec{subsec:dp} \hl{allow to obtain optimal policies that satisfy this property. Instead, the set of optimal policies obtained from} (\ref{eq:optj}) \hl{includes policies whose value function is not maximum in every state. The criterion used to identify optimal policies in} \myEq{eq:optj} \hl{is weaker\footnote{The performance measure $J$ depends on the initial state distribution $\mu$. We consider, for instance, an \ac{MDP} whose state space $\Sspace$ is composed of two regions such that it is not possible to reach one region from the other. If the probability of being in one of these two regions is equal to zero (according to $\mu$), the policies maximizing $J$ are the ones that maximize $J$ in the visited states, regardless of their performance in the unvisited region.} than the one used in} \mySubsec{subsec:dp}\hl{, however it is appropriate in our work.}
 
 \subsection{Properties of \ac{RL} techniques}
 \ac{RL} algorithms require exploration to learn the optimal policy $\pi^{*}$. Exploration is provided by the agent that evolves in the \ac{MDP} according to the current policy $\pi$ and collects information about states, actions and rewards at each time step $t$, until the (possibly infinite) horizon $T$ of the episode. All the information gathered by the agent is represented by a tuple called \emph{trajectory}: $\langle s_0, a_0, r_1, s_1, a_1, ..., s_{T-1}, a_{T-1}, r_{T} \rangle$, where $s_{0} \sim \mu$, $a_{t} \sim \pi(\cdot|s_{t})$, $r_{t} = R(s_{t}, a_{t})$, $s_{t+1} \sim P(\cdot|s_{t}, a_{t})$. \hl{If the task is episodic, usually} the agent collects a \emph{batch} of $N$ different trajectories with the same policy $\pi$ before updating it. The number $N$ of trajectories is called \emph{batch size}.\\
@@ -221,10 +221,19 @@ We introduce the notion of \emph{Lipschitz continuity} in order to define some p
 Given two metric spaces $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-\acf{LC} if
 \begin{align} \forall(x_1, x_2) \in X^2, d_Y(f(x_1), f(x_2)) \leq L_f d_X(x_1, x_2). \label{eq:lip} \end{align}
 \end{definition}
-\noindent The smallest $L_f$ for which~\eqref{eq:lip} holds is called the Lipschitz constant of $f$. For real-valued functions (\eg the reward function $R$), we use the Euclidean distance as metric for the codomain distance. For the transition function $P$ and the stochastic policies $\pi$ we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures, defined as follows:
+\noindent The smallest $L_f$ for which~\eqref{eq:lip} holds is called \emph{Lipschitz constant} of $f$. For real-valued functions (\eg the reward function $R$), we use the Euclidean distance as metric for the codomain distance. \hl{The same metric can be used to measure the distance between states and actions, as long as they can be represented in a numeric (possibly multidimensional) format.} For the transition function $P$ and the stochastic policies $\pi$ we need to introduce a distance between probability distributions. We consider the Kantorovich or $L^1$-Wasserstein metric on probability measures, defined as follows:
 \begin{definition}[Kantorovich metric]
 Given two probability measures $p$ and $q$, the Kantorvich measure $\Kant(p, q)$ is:
 \begin{align} \Kant(p, q) = \sup_f\Big\{ \Big| \int_x f(x) d\Big(p(x)-q(x)\Big) \de x \Big|: L_f \leq 1 \Big\}. \label{eq:kant}\end{align}
+\end{definition}
+\noindent \hl{In the case of deterministic policies, the probability distributions $p$ and $q$ are Dirac delta functions. The Kantorovich distance between two Dirac delta functions is equal to the distance of their locations.}\\
+\newline
+\hl{In this work, it is also important to consider the} \emph{Hausdorff metric} \hl{to measure the distance of two subsets of a metric space. We use it in the abstract state space since each abstract state $X$ is a subset of the state space $\Sspace$.}
+\begin{definition}[Hausdorff metric]
+	Let $X$ and $Y$ be two non-empy subsets of a metric space $(M,d)$. The Hausdorff distance $d_{H}(X,Y)$ is defined as:
+	\begin{align}
+		d_{H}(X,Y) = \max \Big\{\sup_{x \in X}\inf_{y \in Y}d(x, y), \sup_{y \in Y}\inf_{x \in X}d(x,y)\Big\}.
+	\end{align}
 \end{definition}
 \noindent In this work, we restrict our attention to Lipschitz-continuous MDPs and policies. We make similar assumptions as in [\cite{pirotta2015policy}]. For the MDP, we require both the continuity of the transition model and the reward:
 %
@@ -238,20 +247,24 @@ Given two probability measures $p$ and $q$, the Kantorvich measure $\Kant(p, q)$
 \end{assumption}
 %
 \noindent where $d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right) = \norm{s-\wt{s}} + \norm{a-\wt{a}}$ is the taxicab norm on $\Sspace\times\Aspace$.
-We also require our deterministic policy to be continuous both \wrt the input state and its parameters:
+We also require our policy to be continuous both \wrt the input state and its parameters:
 %
 \begin{assumption}[Lipschitz Policies]\label{ass:lippol}
 	For all $s,\wt{s}\in\Sspace$ and $\vtheta,\wt{\vtheta}\in\Theta$:
 	\begin{align}
-	&\norm{\pi_{\vtheta}(s) - \pi_{\vtheta}(\wt{s})} \leq L_{\pi_{\vtheta}}\norm{s-\wt{s}}, \\
-	&\norm{\pi_{\vtheta}(s) - \pi_{\wt\vtheta}(s)} \leq L_{\Theta}\norm{\vtheta-\wt{\vtheta}},
+	&\Kant\Big(\pi_{\vtheta}(\cdot|s),\pi_{\vtheta}(\cdot|\wt{s})\Big) \leq L_{\pi_{\vtheta}}\norm{s-\wt{s}}, \label{eq:lp1}\\
+	&\Kant\Big(\pi_{\vtheta}(\cdot|s), \pi_{\wt\vtheta}(\cdot|s)\Big) \leq L_{\Theta}\norm{\vtheta-\wt{\vtheta}}, \label{eq:lp2}
 	\end{align}
-	for some positive real constants $\{L_{\pi_{\vtheta}}\}_{\vtheta\in\Theta}$ and $L_{\Theta}$.
+	for some positive real constants $\{L_{\pi_{\vtheta}}\}_{\vtheta\in\Theta}$ and $L_{\Theta}$. \hl{In case $\pi_{\theta}$ is a deterministic policy,} (\ref{eq:lp1}) and (\ref{eq:lp2}) \hl{are replaced with:}
+	\begin{align}
+	&\norm{\pi_{\vtheta}(s) - \pi_{\vtheta}(\wt{s})} \leq L_{\pi_{\vtheta}}\norm{s-\wt{s}}, \\
+	&\norm{\pi_{\vtheta}(s) - \pi_{\wt\vtheta}(s)} \leq L_{\Theta}\norm{\vtheta-\wt{\vtheta}}.
+	\end{align}
 \end{assumption}
 %
 \noindent We use the euclidean norm to measure distances on $\Sspace$, $\Aspace$ and $\Theta$, but everything works for general metrics.
 In the following, we will always assume that ${L_{P}(1+L_{\pi_{\vtheta}}) < \gamma^{-1}}$.
-These assumptions are enough to guarantee the continuity of the value functions \wrt states and actions:
+These assumptions are enough to guarantee the \hl{Lipschitz} continuity of the value functions \wrt states and actions:
 %
 \begin{lemma}[\cite{rachelson2010locality}]\label{lem:lipval}
 	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $s,\wt{s}\in\Sspace$, $a,\wt{a}\in\Aspace$ and $\vtheta\in\Theta$:
@@ -289,7 +302,7 @@ Several state abstractions schemes have been proposed, all of them aggregating t
 \begin{align}
 d(s, \wt{s}) = \max_{a \in \Aspace} \Big( c_{R} d_{R}(R(s,a), R(\wt{s}, a)) + c_{P} d_{P}(P(\cdot|s, a), P(\cdot|\wt{s}, a)) \Big), \label{eq:dismet}
 \end{align}
-\hl{where $c_{R}$ and $c_{P}$ are two constants such that $c_{R} + c_{P} = 1$, $d_{R}$ is a distance measure (usually the Euclidean distance) and $d_{P}$ is a distance measure for probability distributions (for instance, the Kantorovich distance defined in} \ref{eq:kant}\hl{). We can choose some seed states and cluster all the remaining states according to the distance metric in} \ref{eq:dismet}.\\
+\hl{where $c_{R}$ and $c_{P}$ are two constants such that $c_{R} + c_{P} = 1$, $d_{R}$ is a distance measure (usually the Euclidean distance) and $d_{P}$ is a distance measure for probability distributions (for instance, the Kantorovich distance defined in} (\ref{eq:kant})\hl{). We can choose some seed states and cluster all the remaining states according to the distance metric in} (\ref{eq:dismet}).\\
 \newline 
 In this work, we focus on \textit{state aggregation} where $\Xspace$ is a partition of $\Sspace$ and $s\in\Gamma(s)$. Hence, we will often identify $\Gamma^{-1}(X)$ with $X$ (as a set) itself. When it is possible, state abstraction focuses on the preservation of those properties that allow an agent to perform optimal behaviours.\\
 \newline
