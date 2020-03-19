@@ -1,13 +1,13 @@
 \chapter{Experiments} \label{chap:exp}
-In this chapter, we test \ac{DPO} on simulated continuous control tasks. Details on task and policy definitions are provided for each experiment: in \mySec{sec:mini} for the experiment \emph{Minigolf}, in \mySec{sec:mass} for the experiment \emph{Double Integrator} and in \mySec{sec:safe} for the experiment \emph{Robot Adaptation}. In \mySec{sec:exp2} we provide details on how experiments were performed, we also show the results of the tuning phase performed on some hyperparameters. Additional results that help to understand better the behaviour of \ac{DPO} are provided in \mySec{sec:exp3}.
+In this chapter, we test \ac{DPO} on simulated continuous control tasks. Details on task and policy definitions are provided for each experiment: in \mySec{sec:mini} for the \emph{Minigolf} experiment, in \mySec{sec:mass} for the \emph{Double Integrator} experiment and in \mySec{sec:safe} for the \emph{Robot Adaptation} experiment. In \mySec{sec:exp2} we provide details on how experiments were performed, we also report the results of the tuning phase (previous to the experiments) performed on some hyperparameters. Hyperparameters for all the algorithms are selected via grid search, for \ac{DPO} the regularization coefficient $\lambda$ and the projection step size $\alpha$ are tuned. Additional results that help to understand better the behaviour of \ac{DPO} are provided in \mySec{sec:exp3}.
 
 \section{Minigolf}\label{sec:mini}
-We begin with a one-dimensional task, adapted from~\citet{doro2019gradient}, where the agent has to throw a ball into a hole by hitting it with a putter as few times as possible. The policy is an \ac{RBF} network mapping the scalar state (the ball-hole distance) to the scalar action (the applied force). 
+We begin the experimental phase of this work with a one-dimensional task, adapted from~\citet{doro2019gradient}, where the agent has to throw a ball into a hole by hitting it with a putter as few times as possible. The policy is an \ac{RBF} network mapping the scalar state (the ball-hole distance) to the scalar action (the applied force). 
 The agent receives a reward of $-1$ for every intermediate hit, and is penalized hundredfold for overshooting. We refer to the latter event as a \textit{failure} in the following.
-The ball is initialized at a random position at each episode. The environment is otherwise deterministic, but has nonlinear dynamics, complicated by the variable friction of the course.
+The ball is initialized at a random position at each episode. If not for the initialization, the environment is deterministic, but has nonlinear dynamics, complicated by the variable friction of the course.
 We compare \ac{DPO} with REINFORCE. The latter learns the mean and standard deviation of a Gaussian policy.
 For \ac{DPO}, we discretize the state space into $12$ equally sized intervals. We use the \ac{BMDP} approach with Lipschitz constant\footnote{We assume to know the Lipschitz constant, but it should be estimated from data or hand-tuned in practice.} $L_{\Delta}=0.3$. We also evaluate \ac{DPO} under the simplifying assumption $L_{\Delta}=0$, obtaining better results in practice.
-Hyperparameters for all the algorithms are selected via grid search: regularization coefficient $\lambda$ and projection step size $\alpha$ for \ac{DPO}, initial policy standard deviation and learning rate for REINFORCE.
+The initial policy standard deviation and the learning rate for REINFORCE are tuned before to run the final experiment.
 Details on hyperparameter selection are reported in \mySec{sec:exp2}.\\
 \newline
 Figure~\ref{fig:minigolf} shows average return and total failures over iterations (all algorithms use a constant batch size of 500 episodes per iteration). The performance of \ac{DPO} is comparable with that of REINFORCE. However, the $L_{\Delta}=0$ version is able to solve the task without any failure. This is not the case for REINFORCE, not even when the hyperparameters are explicitly selected as to minimize the number of failures (REINFORCE* in the figure). In fact, in this task, an almost-optimal stochastic policy has non-zero probability of overshooting. This source of risk is removed by \ac{DPO}, which is entirely deterministic. However, without explicit safety constraints, a failing policy can still be learned, as happens in the $L_{\Delta}=0.3$ case.
@@ -39,7 +39,6 @@ R(s) =
 -1 & \text{otherwise}.
 \end{cases} \nonumber
 \end{align}
-
 The policy used for this task is a radial-basis network composed of four Gaussian functions $\phi_i$, with constant hyper-parameters $\mu_i$ and $\sigma_i$. The action prescribed by the policy is computed as $a = \vphi(s)^T\vtheta$, where $\vtheta\in\Reals^4$, the learned parameters, are the weights given to each Gaussian function. The initial values for $\vtheta$ are $[1, 1, 1, 1]$. The RBF hyperparameters are as follows: 
 \begin{align}
 \phi_i(s; \mu_i, \sigma_i) &= \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}, \nonumber \\
@@ -47,7 +46,6 @@ The policy used for this task is a radial-basis network composed of four Gaussia
 \sigma_i &\in(4, 4, 4, 4). \nonumber
 \end{align}
 In the case of REINFORCE, a Gaussian noise $\eta\sim\Gauss(0,\sigma^2)$ is added to the action, where $\sigma=e^{\omega}$ and $\omega\in\Reals$ is an additional learned parameter. The initial value for $\sigma$ is selected as a hyper-parameter.
-
 We set a discount factor of $\gamma=0.99$ and a maximum task horizon of $20$ time steps.
 
 \section{Double Integrator} \label{sec:mass}
@@ -99,7 +97,9 @@ We set a discount factor of $\gamma=0.95$ and a maximum task horizon of $20$ tim
 %
 \section{Robot Adaptation} \label{sec:safe}
 Finally, we consider a more realistic scenario. A mobile robot on a flat surface has to reach goal areas specified by the user. 
-The task is adapted from Safety Gym~\citep{ray2019benchmarking} and based on MuJoCo~\citep{todorov2012mujoco}. The robot has a speed-based actuator for turning and a force-based one for going forward and backward, resulting in a two-dimensional action. Its state is composed of typical sensor observations (accelerometer, velocimeter, gyroscope, magnetometer) and a compass pointing to the current goal, for a total of $9$ state variables. The goal is a randomly placed circular area, and the robot is rewarded for approaching it through a dense reward signal. Whenever reached, the goal is placed at a new random position. We initialize the robot with a good deterministic linear policy, learned with \ac{PGPE}, whose performance (averaged over $1000$ test episodes) is reported as a black dashed line in Figure~\ref{fig:recover}. Imagine this policy has been learned in a controlled environment, then the robot has been deployed in a facility where random actions are not permitted. Then, a fault occurs, in the form of a fixed offset ($20\degree$) on the angle measured by the goal compass. The lower performance of the original policy after the fault is reported as a red dotted line. A corresponding difference in the agent's behavior can be appreciated from the animation feature provided by MuJoCo to observe the simulation. Using \ac{DPO}, the agent can adapt the policy parameters to the environmental change, as shown in Figure~\ref{fig:recover}. The environment is deterministic. We also make the simplifying assumption $L_{\Delta}=0$ and show the results for a hand-tuned regularization parameter $\lambda$. For each policy update, a batch of $10$ episodes of $200$ steps each is collected, and we show the average return over each batch. The performance of \ac{PGPE} is also reported as a reference. Both algorithms are able to fine-tune the policy back to its original performance. However, \ac{DPO} does that without action randomization.
+The task is adapted from Safety Gym~\citep{ray2019benchmarking} and based on MuJoCo~\citep{todorov2012mujoco}. The robot has a speed-based actuator for turning and a force-based one for going forward and backward, resulting in a two-dimensional action. Its state is composed of typical sensor observations (accelerometer, velocimeter, gyroscope, magnetometer) and a compass pointing to the current goal, for a total of $9$ state variables. The goal is a randomly placed circular area, and the robot is rewarded for approaching it through a dense reward signal. Whenever reached, the goal is placed at a new random position. We initialize the robot with a good deterministic linear policy, learned with \ac{PGPE}, whose performance (averaged over $1000$ test episodes) is reported as a black dashed line in Figure~\ref{fig:recover}. Imagine this policy has been learned in a controlled environment, then the robot has been deployed in a facility where random actions are not permitted.\\
+\newline
+Then, a fault occurs, in the form of a fixed offset ($20\degree$) on the angle measured by the goal compass. The lower performance of the original policy after the fault is reported as a red dotted line in Figure~\ref{fig:recover}. A corresponding difference in the agent's behavior can be appreciated from the animation feature provided by MuJoCo to observe the simulation. Using \ac{DPO}, the agent can adapt the policy parameters to the environmental change, as shown in Figure~\ref{fig:recover}. The environment is deterministic. We also make the simplifying assumption $L_{\Delta}=0$ and show the results for a hand-tuned regularization parameter $\lambda$. For each policy update, a batch of $10$ episodes of $200$ steps each is collected, and we show the average return over each batch. The performance of \ac{PGPE} is also reported as a reference. Both algorithms are able to fine-tune the policy back to its original performance. However, \ac{DPO} does that without action randomization.
 
 \begin{figure}[t]
 	\begin{minipage}[t]{.48\columnwidth}
@@ -132,7 +132,6 @@ R(s_t, a_t) = r \times \Delta distance\_from\_goal(t),
 \]
 where $r=1$, $\Delta distance\_from\_goal = distance(t) - distance(t-1)$ and $distance(t)$ measures the distance of the robot from the goal at time step $t$.
 To compute $\Delta distance\_from\_goal$, the environment keeps a memory of previous distances. This, together with the fact that $distance(t)$ cannot be computed from the available observations, prevents us to compute $R(s,a)$ for all states and actions, as assumed in the paper. However, since $R(s_t,a_t)$ is independent from $a_t$, we can estimate $R(X,a)$ for any abstract state $X$ and action $a$ simply by averaging the rewards obtained in the states of $X$, regardless of the performed action. The delayed effect of actions on rewards is captured by also estimating the abstract transition function anyway.
-
 For this task, we use a linear policy. The initial parameters, learned with \ac{PGPE} and representing an almost optimal policy before the compass fault, are reported here:
 \[
 \vtheta_{0} = 
@@ -142,7 +141,6 @@ For this task, we use a linear policy. The initial parameters, learned with \ac{
 \end{bmatrix}.
 \]
 For \ac{PGPE}, a factored Gaussian hyper-policy $\Gauss(\boldsymbol{\rho},\mathop{diag}(\boldsymbol{\sigma}^2))$ is defined over the $18$-dimensional parameter space, where $\boldsymbol{\sigma}=e^{\boldsymbol{\omega}}$, $\boldsymbol{\rho},\boldsymbol{\omega}\in\Reals^{18}$ are learned parameters, and $\boldsymbol{\rho}$ is initialized as $\vtheta_{0}$. All the components of $\boldsymbol{\sigma}$ are initialized to the same scalar $\sigma$, selected as a hyper-parameter.
-
 We set a discount factor of $1$ and a maximum task horizon of $200$ ($2000$ in some experiments) time steps.
 
 
@@ -173,7 +171,7 @@ The bold values in the tables represent the combination of parameters used to pe
 	\caption{\label{tab:recap1}Configurations used for hyper-parameter tuning. We denote with $n$ the number of iterations (policy updates), with $m$ the number of independent runs, with $N$ the batch size, with $H$ the task horizon, with $\gamma$ the discount factor and with $|\Xspace|$ the number of abstract states.}
 \end{table}
 
-\subsection*{Minigolf}
+\paragraph{Minigolf}
 For REINFORCE (Table~\ref{tab:t2}) we performed the final experiment with two different combinations of parameters: $(\alpha=0.05, \log\sigma=-2)$ selected according to the criterion used in the tuning phase and $(\alpha=0.005, \log\sigma=-3)$, that provided the lowest number of \emph{failures} in the tuning phase.
 \begin{table}[H]
 	\centering

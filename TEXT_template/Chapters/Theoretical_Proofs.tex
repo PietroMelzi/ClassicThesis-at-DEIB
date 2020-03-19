@@ -1,9 +1,9 @@
 \chapter{Theoretical Proofs} \label{chap:proofs}
-In this chapter we provide some theoretical proofs that sustain the goodness of the solution proposed with the \ac{DPO} algorithm and provide further insight that justify the approach we used in specific phases of the algorithm. We start by enouncing some theorems in \mySec{sec:theo}, together with some related considerations that confirm the consistency of \ac{DPO} with the theoretical evidences. The proofs of these theorems are provided in \mySec{sec:proo}.
+In this chapter we provide some theoretical proofs that sustain the goodness of the solution proposed with the \ac{DPO} algorithm and provide further insights that justify the approach we used in the specific phases of the algorithm. Firstly, we enunciate some theorems in \mySec{sec:theo}, together with some considerations that confirm the consistency of \ac{DPO}. The proofs of these theorems are provided in \mySec{sec:proo}.
 
 \section{Theorems} \label{sec:theo}
-The overall goal we define for a single iteration of the algorithm is to maximize the performance improvement $J(\vtheta') - J(\vtheta)$.
-The following lower bound justifies, under the Lipschitz assumptions, the approach we propose in \ac{DPO}:
+The overall goal that we consider in each iteration of the algorithm is the maximization of performance improvement $J(\vtheta') - J(\vtheta)$.
+From the following lower bound we obtain a justification, under Lipschitz assumptions, for the approach we propose in \ac{DPO}:
 %
 \begin{restatable}{theorem}{boundj}\label{lem:boundj}
 	For any deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$, state partition $\Xspace$ and deterministic abstract policy ${\rho:\Xspace\to\Aspace}$, let $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho)$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}:
@@ -55,11 +55,10 @@ These theoretical bounds justify our definition of $\delta$-\ac{MDP} and how we 
 \newline
 In addition, this analysis provides some insight into how choosing the partition $\Xspace$ affects the optimization problem. From~\eqref{eq:wstar}, it would seem that a finer discretization is always better. However, an important assumption of Theorem~\ref{lem:surr} suggests that this is not the case: for the error bound to hold, $\rho$ must be chosen so that, for all $X\in\Xspace$, $\rho(X)$ belongs to $\pi_{\vtheta}(X)$, the subset of actions performed by the original policy $\pi_{\vtheta}$ in the states of $X$. This additional constraint on the abstract policy is necessary to keep the discretization error under control, but it introduces a further \textit{model bias} in the solution of the policy optimization problem, since the optimum over the complete action space may no longer be attainable. This bias is larger when the restricted action sets are smaller, which may result from very fine discretizations. 
 %
-Intuitively, we must guarantee a sufficient amount of variety among the candidate actions of each abstract state. This can be seen as a trade-off between (passive) exploration and precision. The state partition should be chosen so as to optimize this trade-off, which may require an adaptive discretization schedule. We leave the theoretical study of this problem as future work, instead providing a sensitivity analysis to grid resolution in Section~\ref{sec:exp}. \todo{ref exp}
+Intuitively, we must guarantee a sufficient amount of variety among the candidate actions of each abstract state. This can be seen as a trade-off between (passive) exploration and precision. The state partition should be chosen so as to optimize this trade-off, which may require an adaptive discretization schedule. We leave the theoretical study of this problem as future work, instead providing a sensitivity analysis to grid resolution in Section~\ref{sec:mass}.
 
 \section{Proofs} \label{sec:proo}
-In this section, we provide complete proofs for the formal statements presented above. To do so, we also state and prove some auxiliary lemmas. 
-First, we denote with $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(s)$ the advantage function of policy $\pi_{\vtheta}$. This function is Lipschitz \wrt states and actions:
+In this section, we provide complete proofs for the formal statements presented in \mySec{sec:theo}. In order to do that, we also introduce and prove some auxiliary lemmas that involve the advantage function $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(s)$, defined according to a policy $\pi_{\vtheta}$. This function is Lipschitz \wrt states and actions:
 \begin{restatable}{lemma}{adv1}\label{lem:adv1}
 	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta\in\Theta$, $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
 	\begin{align*}
@@ -79,7 +78,7 @@ First, we denote with $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(
 	\end{align}
 	where~\eqref{p:1} is from Lemma~\ref{lem:lipval}.
 \end{proof}
-The following special case will be useful:
+\noindent The following special case will be useful:
 \begin{restatable}{lemma}{adv2}\label{lem:adv2}
 	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta,\vtheta'\in\Theta$ and $s\in\Sspace$:
 	\begin{align*}
@@ -97,7 +96,7 @@ The following special case will be useful:
 	\end{align}
 	where the last inequality is from Assumption~\ref{ass:lippol}.
 \end{proof}
-We can now prove the main Theorem:
+\noindent We can now prove the main Theorem~\ref{lem:boundj}:
 \boundj*
 \begin{proof}
 	From the Performance Improvement Lemma~\citep{kakade2002approximately}:
@@ -168,7 +167,7 @@ We can now prove the main Theorem:
 	and~\eqref{p:9} is from the definition of $L_{V^{\vtheta}}$ in Lemma~\ref{lem:lipval}.
 \end{proof}
 
-Finally, we can relate $W^{\rho}$ to the value function of abstract policy $\rho$ in the abstract MDP:
+\noindent Finally, we can relate $W^{\rho}$ to the value function of abstract policy $\rho$ in the abstract MDP and prove Theorem \ref{lem:surr}.
 
 \surr*
 \begin{proof}
