@@ -92,7 +92,7 @@ When the problems involve finite \ac{MDPs} with a larger state space or continuo
 \subsection{Dynamic Programming}\label{subsec:dp}
 \acf{DP} is a collection of algorithms that can be used to compute optimal policies, given a model of the environment in the form of an \ac{MDP}. Since \ac{DP} is expensive and requires finite \ac{MDPs}, its utility in solving \ac{RL} problems is limited. However \ac{DP} provides strong foundations for understanding the more advanced methods. \ac{DP} offers two algorithms that compute the optimal value functions: \emph{policy iteration} and \emph{value iteration}.
 
-\subsubsection{Policy Iteration}
+\paragraph{Policy Iteration}
 In policy iteration, two consecutive operations are performed on a policy $\pi$ in order to obtain a policy $\pi'$ that is better according to the ordering rule in~\eqref{eq:ordpol}. These operations are called \emph{policy evaluation} and \emph{policy improvement} and the goal of the algorithm is to obtain the optimal value function $V^{*}$ through the sequence:
 \begin{align}
 \pi_{0} \xrightarrow{\text{E}} V^{\pi_{0}} \xrightarrow{\text{I}} \pi_{1} \xrightarrow{\text{E}} V^{\pi_{1}} \xrightarrow{\text{I}} \pi_{2} \xrightarrow{\text{E}} ... \xrightarrow{\text{I}} \pi_{*} \xrightarrow{\text{E}} V^{*},
@@ -115,7 +115,7 @@ Policy improvement consists in an update of policy $\pi$ in a new deterministic 
 When $\pi'(s) = \pi(s) \quad \forall s \in \Sspace$ or $\pi'$ is as good as $\pi$ (\ie $V^{\pi} = V^{\pi'}$), the algorithm terminates. The policy $\pi'$ is optimal, hence $\pi^{*} = \pi'$.\\
 \newline
 \hl{Because a finite} \ac{MDP} \hl{has a finite number of policies, the entire process is ensured to converge to an optimal policy $\pi^{*}$ and optimal value function $V^{*}$ in a finite number of iterations.}
-\subsubsection{Value Iteration} \label{subsec:vi}
+\paragraph{Value Iteration} \label{subsec:vi}
 The main drawback in policy iteration is that, for each policy evaluation, multiple iterations of the updating rule (\ref{eq:updrule}) are required. If we truncate the policy evaluation after just one application of the updating rule, we obtain value iteration. In value iteration, the value function at each step is updated for all $s \in \Sspace$ as follows:
 \begin{align} V_{k+1}(s) = \max_a \Big( R(s,a) + \gamma \sum_{s'}P(s'|s,a)  V_{k}(s') \Big). \end{align}
 Differently from policy iteration, we don't compute any intermediate policy $\pi_i$. However, the sequence \{$V_{k}$\} of the value functions converges to $V^{*}$ \hl{since value iteration is a special case of policy iteration. The} optimal policy $\pi^{*}$ is obtained applying~\eqref{eq:polimp}, with $V^{*}$ instead of $V^{\pi}$.\\
@@ -125,10 +125,10 @@ Differently from policy iteration, we don't compute any intermediate policy $\pi
 \subsection{Uncomplete Knowledge of \ac{MDPs}}
 In many cases, however, it is not possible to apply \ac{DP}. Some alternatives are introduced below for sake of completeness. We don't detail these methods because they are not related to our work.  
 
-\subsubsection{Tabular Alternatives to \ac{DP}}\label{subsec:alt}
+\paragraph{Tabular Alternatives to DP}\label{subsec:alt}
 If we do not have a complete knowledge of the environment, we can learn the unknown dynamics from experience, \ie from the samples collected by the agent while interacting with the environment. The samples are tuples $\langle s,a,r,s' \rangle_t$, with $s, s' \in \Sspace, a \in \Aspace$ and $r = R(s,a)$. They contain information related to the agent-environment interaction at time step $t$. The two main classes of algorithms are \acf{MC} and \acf{TD}. \ac{MC} methods involve episodic tasks, \ac{TD} learning involves continuing tasks. 
 
-\subsubsection{Approximate Solution Methods}
+\paragraph{Approximate Solution Methods}
 The methods presented so far are not suitable to solve \ac{RL} problems that involve a very large or infinite state space\hl{, such as the tasks in which a robot is free to move in a wide area and its state is represented by several (possibly continuous) dimensions.} In these problems we cannot expect to obtain the optimal policy, and our goal is to find a good approximate solution using limited computational resources. In an environment with a continuous state space $\Sspace$, the agent will always visit states never seen before. Then, the experience we gather gives information on a subset of states but we need to generalize it to all the state space $\Sspace$. The generalization comes up in the form of \emph{function approximations}. These functions are estimated from samples and approximate value functions over continuous state space $\Sspace$ in place of using tables. \hl{Usually a function approximation is a parameterized function $f^{w}: \Sspace \mapsto \mathbb{R}$, with parameter $w \in \mathbb{R}^{d}$.}\\
 \newline
 Several methods rely on value function approximation in order to provide the solution of the \ac{RL} problem. However, function approximation brings new issues. First of all, convergence guarantees are difficult to obtain \hl{for \emph{greedy policies},} \ie \hl{policies for which the action to be performed in any state is the action having the highest value according to some value functions\footnote{For instance, $\pi(s) = \arg \max_{a \in \Aspace}Q(s,a)$, with $Q(s,a)$ a function approximation, is a greedy policy.}.} If the policy is greedy, an arbitrary small change in the estimated value of an action can cause it to be, or not be, selected [\cite{Sutton1999PolicyGM}]. \hl{Furthermore,} approximated value functions can introduce a bias that prevents the method to converge even to a local optimum [\cite{deisenroth2013Survey}]. \todo{too complex functions as neural networks with a lot of parameters as approximate value fun?}
@@ -152,14 +152,14 @@ where $\mu_i$ and $\sigma_i$ are hyperparameters \hl{of the feature function $\p
 More complex policy parametrizations include deep neural networks [\cite{duan2016benchmarking}]. 
 Stochastic policies randomize over actions. %In continuous settings, this is typically done by adding a Gaussian noise, \eg for a linear policy $a\sim\mathcal{N}(\vtheta^T\vphi(s),\Sigma)$, where $\Sigma\in\Reals^{D\times D}$ is a covariance matrix.
 
-\subsubsection{Softmax policies}
+\paragraph{Softmax policies}
 \hl{A possible policy parameterization for} \ac{PS} \hl{methods is the one that uses the \emph{softmax function}. The policies defined according to the softmax function are also called \emph{Gibbs policies}. This kind of policies is mostly used when the action set $\Aspace$ is discrete because, in order to define the probability $\pi(a|s)$, it is required to consider all the feasible actions in the state $s$:}
 \begin{align}
 \pi_{\theta}(a|s) = \frac{\exp\Big(\theta^{T}\phi(s,a)\Big)}{\sum_{a_{k} \in \Aspace(s)}\exp\Big(\theta^{T}\phi(s,a_{k})\Big)},
 \end{align}
 \hl{where $\Aspace(s)$ is the set of actions that can be performed in state $s$ and $\phi(s,a)$ is a feature function depending both on state and action.}
 
-\subsubsection{Normal Policies}
+\paragraph{Normal Policies}
 A common parametrization for countinuous actions represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a scalar action, with mean $\mu$ and standard deviation $\sigma$ given by parametric function approximators that depend on the state:
 \begin{align} \pi_{\theta}(a|s) = \frac{1}{\sigma(s, \theta)\sqrt{2\pi}}\exp\Big( -\frac{(a -\mu(s, \theta))^2}{2\sigma(s, \theta)^2}\Big), \end{align} \todo{perchè alcuni $\theta$ in grassetto?}
 where $\mu(s, \theta) = \theta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \theta) = \exp\Big( \theta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\theta = [\theta_{\mu}, \theta_{\sigma}]^{T}$. \hl{This is only a possible parameterization for the standard deviation $\sigma$ of the normal distribution, in this configuration the exploration is said to be \emph{heteroscedastic} because the standard deviation changes according to the state. Usually the standard deviation $\sigma$ of the normal distribution is represented by a single parameter that does not depend on the state.} 
@@ -197,8 +197,8 @@ As stated in [\cite{givan2000bounded}], there exists at least one optimistically
 V^{*}_{\updownarrow \text{opt}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{opt} \text{ to order interval value functions,}\\
 V^{*}_{\updownarrow \text{pes}} = \max_{\pi \in \Pi} V_{\updownarrow, \pi} \text{ using} \leq_{pes} \text{ to order interval value functions.}
 \end{align*}
-In order to better understand the meaning of the optimal policies, we consider a game in which we choose a policy $\pi$ and then a second player chooses an \ac{MDP} $M \in M_{\updownarrow}$ to evaluate the policy. $\overline{V}^{*}_{opt}$ is the best value function we can obtain if the second player cooperates in the game, $\underline{V}^{*}_{pes}$ is the best value function obtainable if the second player is an adversary.\\
-\newline
+In order to better understand the meaning of the optimal policies, we consider a game in which we choose a policy $\pi$ and then a second player chooses an \ac{MDP} $M \in M_{\updownarrow}$ to evaluate the policy. $\overline{V}^{*}_{opt}$ is the best value function we can obtain if the second player cooperates in the game, $\underline{V}^{*}_{pes}$ is the best value function obtainable if the second player is an adversary.
+\paragraph{Interval Value Iteration}
 In [\cite{givan2000bounded}] it is defined the \acf{IVI} algorithm that computes optimal value intervals, which is similar to the standard value iteration presented in \mySubsec{subsec:vi}. In \ac{IVI} the updating rule is:
 \begin{align}
 V_{\updownarrow, k+1}(s) = \max_{a \in \Aspace, \leq_{*}} \Big[ \min_{M \in M_{\updownarrow}} VI_{M, a}(\underline{V}_{k})(s), \max_{M \in M_{\updownarrow}} VI_{M, a}(\overline{V}_{k})(s) \Big], \label{eq:ivi}
@@ -304,8 +304,8 @@ d(s, \wt{s}) = \max_{a \in \Aspace} \Big( c_{R} d_{R}(R(s,a), R(\wt{s}, a)) + c_
 \end{align}
 \hl{where $c_{R}$ and $c_{P}$ are two constants such that $c_{R} + c_{P} = 1$, $d_{R}$ is a distance measure (usually the Euclidean distance) and $d_{P}$ is a distance measure for probability distributions (for instance, the Kantorovich distance defined in} (\ref{eq:kant})\hl{). We can choose some seed states and cluster all the remaining states according to the distance metric in} (\ref{eq:dismet}).\\
 \newline 
-In this work, we focus on \textit{state aggregation} where $\Xspace$ is a partition of $\Sspace$ and $s\in\Gamma(s)$. Hence, we will often identify $\Gamma^{-1}(X)$ with $X$ (as a set) itself. When it is possible, state abstraction focuses on the preservation of those properties that allow an agent to perform optimal behaviours.\\
-\newline
+In this work, we focus on \textit{state aggregation} where $\Xspace$ is a partition of $\Sspace$ and $s\in\Gamma(s)$. Hence, we will often identify $\Gamma^{-1}(X)$ with $X$ (as a set) itself. When it is possible, state abstraction focuses on the preservation of those properties that allow an agent to perform optimal behaviours.
+\subsection{Irrelevance Abstractions}
 In [\cite{lihong2006towards}], five different types of abstractions are presented, all of which preserve some information that is critical for solving the original \ac{MDP}. They can be ordered from the method that prescribes the finest abstraction to the method that prescribes the coarsest one. Here we report the five types of abstraction, called \emph{irrelevance abstractions}:
 \begin{itemize}
 	\item A \emph{model-irrelevance} abstraction $\Gamma_{model}$ is such that for any action $a$ and ay avstract state $X$, $\Gamma_{model}(s_1) = \Gamma_{model}(s_2)$ implies $R(s_1,a)=R(s_2,a)$ and $\int_{X'}P(s'|s_1,a) \de s'= \int_{X'}P(s'|s_2,a) \de s'$.
