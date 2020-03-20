@@ -1,43 +1,46 @@
 \chapter{Deterministic Policy Optimization} \label{chap:dpo}
-This is the most important chapter in our work, here we present the algorithm we designed, called \acf{DPO}. The chapter is divided in four sections: in \mySec{sec:deltamdp} we provide an explaination of the approach that we followed, motivated by the aim of this work presented in the introduction and recalled in the section, in \mySec{sec:algo} we describe the algorithm presenting a pseudocode of it. Details on how the algorithm is actually implemented are provided in \mySec{sec:detail}, while in \mySec{sec:absmdp} we explain how to address the issue of estimating the functions required by the algorithm in the different situations that there may be.
+This is the most important chapter in our work, here we present the algorithm we designed, called \acf{DPO}. The chapter is divided in four sections. In \mySec{sec:deltamdp} we provide an explanation of the approach that we followed, motivated by the aim of this work (presented in \myChap{ch:intro} and recalled in \mySec{sec:deltamdp}), in \mySec{sec:algo} we describe the algorithm according to an high-level pseudocode of it. Details on the implementation of the different parts of the algorithm are provided in \mySec{sec:detail}, while in \mySec{sec:absmdp} we explain how to address the concrete issues that arise in the algorithm, related to the necessary function estimations.
  
 \section{Passive Exploration via $\delta$-MDPs}\label{sec:deltamdp}
 %Passive exploration
-As mentioned in \myChap{ch:intro}, the goal of this work is to ensure that the agent is able to learn a deterministic policy avoiding to perfrom dangerous actions, for him or for the environment, throughout its learning phase. We address this requirement by imposing that the agent can gather the samples needed for improving a parametric policy \emph{without performing random actions}. A way to satisfy this strict constraint is to learn a deterministic policy and only perform the actions it prescribes. By doing this, the agent's behaviour does not involve any random exploration, then the exact action that will be performed by the agent is known in every moment. 
-This choice, unfortunately, prevents any form of active exploration. The fundamental problem is that, by observing a single action for each (continuous) state and without any probability measure over actions, the agent has no way of preferring one action over another for that particular state, which makes policy optimization impossible.\\
+As mentioned in \myChap{ch:intro}, the goal of this work is to ensure that the agent is able to learn a deterministic policy avoiding the execution of dangerous actions throughout the learning phase (in this way the agent do not harm itself or the environment in which it evolves). We address this requirement on exploration by forcing the agent to gather the samples needed for improving the parametric policy \emph{without performing any random action}. A way to satisfy this strict constraint is to learn a deterministic policy and use it to collect samples so that no random actions can be performed at all. By doing this, the exact action that will be performed by the agent is known in every moment. 
+This choice, unfortunately, prevents any form of active exploration and the possibility to update the parametric policy with existing algorithms. The fundamental reason is that, by observing a single action for each (continuous) state and without any probability measure over actions, the agent has no way of preferring one action over another for that particular state, which makes policy optimization impossible.\\
 \newline 
 However, if the environment is sufficiently regular, we can exploit a form of \emph{passive} exploration. 
-The key idea is to aggregate states in such a way as to observe a variety of actions within these larger, abstract states. These are simply the actions chosen by our deterministic policy in the different states belonging to the same aggregate. In a sense, aggregation allows transferring the variety of the states visited by our policy (both over different time-steps of the same episode and over independent episodes) into actions. Variety over states is encoded by the future-state distribution $\delta^{\vtheta}$, depending on the deterministic policy $\pi^{\theta}$, and is fueled by stochastic transitions and random restarts.
-The price to pay in order to consider state aggregation is basically a discretization error, that could be, in general, unbounded. However, in Lipschitz MDPs we can keep this error under control, as we will show in \myChap{ch:proofs}.\\
+The key idea is to aggregate states in such a way as to observe a variety of actions within these larger, abstract states. This variety is obtained by considering, for every abstract state, the set of actions chosen by our deterministic policy in the different states belonging to the same aggregate. In a sense, aggregation allows transferring the diversity of the states visited by the agent (both over different time-steps of the same episode and over independent episodes) into actions. Variety over states is encoded by the future-state distribution $\delta^{\vtheta}$, depending on the deterministic policy $\pi^{\vtheta}$, and is fueled by stochastic transitions and random restarts that allow to ideally cover the entire state space $\Sspace$.
+The price to pay in order to consider state aggregation is basically a discretization error, that could be, in general, unbounded. However, in Lipschitz \ac{MDPs} we can keep this error under control, as we will show in \myChap{chap:proofs}.\\
 \newline
-In a Lipschitz \ac{MDP}, if we know the effect of performing an action $a$ in a state $s$, we can exploit this knowledge to obtain information about the effect of some unseen state-action pair $(\widetilde{s}, \widetilde{a})$.
-For instance in a deterministic environment, if next-state $s'$ is obtained from the pair $(s, a)$, the Lipschitz condition of regularity on state-transition function provides an estimations of the next-state $\widetilde{s'}$, resulting from a state-action pair $(\widetilde{s}, \widetilde{a})$, in the form of an interval that contains $\widetilde{s'}$, even if the agent doesn't perform action $\widetilde{a}$ in state $\widetilde{s}$. The estimated interval is as precise as the two state-action pairs $(s, a)$ and $(\widetilde{s}, \widetilde{a})$ are similar, where similarity is measured according to a distance measure.
-It appears to be a good idea, starting from the observation of an action $a$ performed in a state $s$, to estimate the effect of taking the same action $a$ in all the states visited by the agent that are similar to $s$ and can be part of the same aggregate: in this way, only actions suggested by the deterministic policy are performed and the estimated intervals for the unseen state-action pairs can be considered sufficiently tight. For a detailed explaination of what can be achieved by exploiting these simple considerations, refer to \mySec{sec:absmdp}.
+In a Lipschitz \ac{MDP} (see \mySubsec{sub:lipmdp} for details on it), if we know the effect of performing an action $a$ in a state $s$, we can exploit this knowledge to obtain information about the effect of performing the same action $a$ on a different state $\wt{s}$.
+For instance we can consider a deterministic environment\footnote{An environment in which the transition function $P$ is a Dirac delta function.} in which we collect a sample $(s,a,s')$, where the next-state $s'$ is obtained from a state-action pair $(s, a)$. The assumption of Lipschitz regularity on the transition function $P$ defined in (\ref{eq:liptf}), in the case of a deterministic environment in which $s' = f(s,a)$, where $f\colon\Sspace\times\Aspace\to\Sspace$ conducts the state transition from $s$ to $s'$, can be rewritten as:
+\begin{align}
+	\norm{f(s,a)-f(\wt{s},\wt{a})} \leq L_{P}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
+\end{align}
+for some positive real constant $L_{P}$. From this inequality, an estimation of the next-state $\widetilde{s'}$ resulting from a state-action pair $(\widetilde{s}, \widetilde{a})$, can be derived in the form of an interval containing $\widetilde{s'}$, even if the agent doesn't perform the action $\widetilde{a}$ in state $\widetilde{s}$. The estimated interval is as precise as the two state-action pairs $(s, a)$ and $(\widetilde{s}, \widetilde{a})$ are similar, according to the measure of similarity described in \mySubsec{sub:lipmdp}.
+It appears as a good idea, starting from the observation of an action $a$ performed in a state $s$, to estimate the effect that would have the execution of the same action $a$ in all the states visited by the agent that are considered similar to $s$. In this way, only the actions suggested by deterministic policy are really performed and the interval estimations computed (involving pairs of states considered similar) can be deemed sufficiently accurate. For a more detailed explaination of how these simple considerations can be exploited to estimate functions required by the algorithm, refer to \mySec{sec:absmdp}.
 %The information we gain from Lipschitz properties is in the form of bounds. For instance, if next-state $s'$ is obtained from observed state-action pair $(s, a)$, Lipschitz conditions provide a spherical region containing \emph{for sure} the state $\widetilde{s'}$ reached from unseen state-action pair $(\widetilde{s}, \widetilde{a})$, assuming deterministic transitions and Euclidean metric. The more similar the two pairs $(s, a)$ and $(\widetilde{s}, \widetilde{a})$ are, the more precise our region will be, and more data can be used to refine our knowledge by intersecting the corresponding regions. 
 %In the continuous bandit (\ie single-state) setting,~\citet{kleinberg2019bandits} provide a way of constructing such regions via directed exploration that is optimal in terms of regret. Albeit deterministic, the resulting behavior would be erratic, and hardly representable with a simple parametric controller.
 %The abstract MDP
 \subsection{$\delta$-\ac{MDPs}}
-We are going to implement this idea by building an abstract MDP over aggregated states. We divide the original state space $\Sspace$ into a partition $\Xspace$. To exploit the Lipschitz continuity of our environment, we need to aggregate states taking their mutual distance into account. For this reason, we only consider \textit{tessellations} of the state space, such as grids. 
+We are going to exploit the ideas derived above by building an abstract \ac{MDP} in which the state space is composed by aggregates of states. We divide the original state space $\Sspace$ into a partition $\Xspace$. To take advantage of the Lipschitz continuity of our environment, we need to aggregate states taking their mutual distance into account. For this reason, we only consider \textit{tessellations} of the state space, such as grids. 
 %
-We denote by $D(X) = \sup_{s,\wt{s}\in X}\norm{s-\wt{s}}$ the diameter of an abstract state $X\in\Xspace$.
-We want the transition and reward functions of our abstract MDP to model the overall effect of actions on abstract states, so that the optimization in the abstract MDP corresponds, at least approximately, to the resolution of the original policy optimization problem\footnote{Doing this exactly would require additional assumptions, like bisimulation~\citep{givan2003equivalence}, which we deem too restrictive.}. To do so, we use the future-state distribution $\delta^{\vtheta}$ as a weighting function (see \mySec{sec:stdisc}), obtaining:
+We denote as $D(X) = \sup_{s,\wt{s}\in X}\norm{s-\wt{s}}$ the diameter of an abstract state $X\in\Xspace$.
+We want that the transition and the reward functions of our abstract MDP are able to model the overall effect of actions on the abstract states, so that the optimization in the abstract MDP corresponds, at least approximately, to the resolution of the original policy optimization problem\footnote{Doing this exactly would require additional assumptions, like bisimulation~\citep{givan2003equivalence}, which we deem too restrictive.}. To achieve this purpose, we consider the future-state distribution $\delta^{\vtheta}$ in order to define the weighting function (see \mySec{sec:stdisc}), obtaining:
 %
 \begin{align}
 	&\widetilde{R}_{\vtheta}(X,a) = \int_{X}\frac{\delta^{\vtheta}(s)}{Z_{\vtheta}(X)}R(s,a)\de s,\label{eq:abrew2} \\
 	&\widetilde{P}_{\vtheta}(X'|X,a) = \int_{X} \frac{\delta^{\vtheta}(s)}{Z_{\vtheta}(X)} \int_{X'} P(s'|s,a)\de s\de s',\label{eq:abtran2}
 \end{align}
 %
-where $Z_{\vtheta}(X)=\int_{X}\delta^{\vtheta}(s)\de s$ is a normalization factor necessary to ensure that the weights sum to one.
-This completes the definition of our abstract MDP, called $\delta$-MDP in the following to stress the fundamental role of the future-state distribution:
+with weighting function $w(s)=\delta^{\vtheta}(s)/Z_{\vtheta}(X)$, where $Z_{\vtheta}(X)=\int_{X}\delta^{\vtheta}(s)\de s$ is a normalization factor necessary to ensure that the weights sum to one.
+This completes the definition of our abstract \ac{MDP}, called $\delta$-MDP in the following to stress the fundamental role of the future-state distribution $\delta^{\vtheta}$ in its definition:
 %
 \begin{definition}\label{def:abmdp}
 	Given an MDP $\langle\Sspace, \Aspace, P, R, \gamma\rangle$, a policy $\pi_{\vtheta}$, and a partition $\Xspace$ of $\Sspace$, the corresponding $\delta^{\vtheta}$-MDP is $\langle\Xspace, \Aspace, \wt{P}_{\vtheta}, \wt{R}_{\vtheta}, \gamma\rangle$, where $\widetilde{R}_{\vtheta}$ is defined as in Equation~\eqref{eq:abrew2} and $\wt{P}_{\vtheta}$ as in Equation~\eqref{eq:abtran2} for all $X,X'\in\Xspace$ and $a\in\Aspace$.
 \end{definition}
 %
-\noindent A theoretical justification for these definitions is provided in \myChap{ch:proofs}.
-A starting-state distribution for the $\delta$-\ac{MDP} can be similarly defined as $\wt{\mu}(X) = \int_{X}\mu(s)\de s$ for all $X\in\Xspace$, where $\mu$ is a starting-state distribution for the original \ac{MDP}.
+\noindent An initial-state distribution for the $\delta$-\ac{MDP} can be defined as $\wt{\mu}(X) = \int_{X}\mu(s)\de s\quad\forall X\in\Xspace$, where $\mu$ is the initial-state distribution for the original \ac{MDP}.
 %
-A (stationary, Markovian) abstract policy is a (possibly stochastic) mapping from abstract states to actions. In order not to confuse them with concrete policies, we will denote them with the letter $\rho$. Fixed the abstract \ac{MDP}, we can define value functions $V^{\rho}$ and $Q^{\rho}$, future-state distribution $\delta^{\rho}$ (over $\Xspace$) and optimal policy $\rho^{*}$, as in any \ac{MDP}. Note that there is no direct correspondence, in general, between concrete and abstract policies, since the behavior of a concrete policy may appear non-Markovian in the abstract \ac{MDP}~\citep{lihong2006towards}.
+A (stationary\footnote{The policy does not changes over time}, Markovian) abstract policy $\rho: \Xspace \to \Delta(\Aspace)$ is a (possibly stochastic) mapping from abstract states to actions. In order not to confuse them with concrete policies $\pi$, we denote them with the letter $\rho$. Fixed the abstract \ac{MDP}, we can define value functions $V^{\rho}$ and $Q^{\rho}$, future-state distribution $\delta^{\rho}$ (over $\Xspace$) and optimal policy $\rho^{*}$, as in any \ac{MDP}. Note that there is no direct correspondence, in general, between concrete and abstract policies, since the behavior of a concrete policy may appear non-Markovian in the abstract \ac{MDP}~\citep{lihong2006towards}.
 However, we introduce a simple "concretization" operator $\Conc: \rho \mapsto \pi$ from abstract policies to concrete policies, defined as
 %\begin{align}
 $(\Conc\rho)(s) = \rho(\Gamma(s))$
@@ -49,8 +52,8 @@ In this section, we show how to use the $\delta$-MDPs defined in Section~\ref{se
 %
 The proposed methodology is as follows: given the original \ac{MDP} and a deterministic parametric policy $\pi_{\vtheta}$, we build the corresponding  $\delta^{\vtheta}$-\ac{MDP} using only the data collected with $\pi_{\vtheta}$ itself. This requires estimating the abstract reward and transition functions. To do so, we can actively exploit the Lipschitz conditions, as discussed in the next sections (\mySec{sec:detail}, \mySec{sec:absmdp}).\\
 \newline
-The solution of the $\delta^{\vtheta}$-\ac{MDP} is a deterministic optimal abstract policy $\rho^{*}$, which is guaranteed to exist and maximizes $V^{\rho}(X)$ for all $X\in\Xspace$. This abstract policy can be emulated in the original \ac{MDP} by $\Conc\rho^{*}$, the piecewise-constant policy. In general, $\Conc\rho^{*}$ may not belong to the original parametric policy space. Hence, we need to project it back as $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho^{*})$, where $\Proj$ is a projection operator. The new parameter vector $\vtheta'$ identifies the novel policy that we are going to run in the environment. The procedure can then be repeated. We call this general method Deterministic Policy Optimization (\ac{DPO} for short), outlined in Algorithm~\ref{alg:dpo}.
-We provide a theoretical justification of this approach in \myChap{ch:proofs}, which also gives further insights on how to concretely perform the different phases of the algorithm, detailed in \mySec{sec:detail}. 
+The solution of the $\delta^{\vtheta}$-\ac{MDP} is a deterministic optimal abstract policy $\rho^{*}$, which is guaranteed to exist and maximizes $V^{\rho}(X)$ for all $X\in\Xspace$. This abstract policy can be emulated in the original \ac{MDP} by $\Conc\rho^{*}$, the piecewise-constant policy, even if in general $\Conc\rho^{*}$ may not belong to the original parametric policy space. Hence, we need to project it back as $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho^{*})$, where $\Proj$ is a projection operator. The new parameter vector $\vtheta'$ identifies the novel policy that we are going to run in the environment. The procedure can then be repeated. We call this general method Deterministic Policy Optimization (\ac{DPO} for short), and we outline (at an high level) the different phases of it in Algorithm~\ref{alg:dpo}. Details on the implementation of the single phases are described in \mySec{sec:detail}.
+We provide a theoretical justification of this approach in \myChap{chap:proofs}, where also further insights on how to concretely perform the different phases of the algorithm are derived.
 %
 %
 \begin{algorithm}[t]
@@ -71,24 +74,24 @@ We provide a theoretical justification of this approach in \myChap{ch:proofs}, w
 %
 
 \section{Algorithmic Details}\label{sec:detail}
-In this section, we provide further details on our implementation of the different phases of \ac{DPO}.
+In this section, we provide further details on our implementation of the different phases of \ac{DPO}, written in Algorithm~\ref{alg:dpo}: state aggregation (or partition), estimation of $\wt{R}_{\vtheta}$ and $\wt{P}_{\vtheta}$ for the creation of $\delta$-\ac{MDP}, solution of it and projection of $\Conc\rho^{*}$ into $\Pi_{\Theta}$.
 
 %\subsection{State Discretization}
 \paragraph{State aggregation:}
 As mentioned, we discretize the state space $\Sspace\subseteq\Reals^N$ into a regular grid $\Xspace$, in which each hyperrectangular cell is an abstract state. 
-We assume that the domain of each of the $N$ state variables is a continuous interval. If a variable is unbounded or the bounds are unknown, they are set equal to the minimum and maximum value, relative to the corresponding dimension, observed among the collected samples. 
-For each dimension $i \in N$, it is provided in input a scalar $k$ that indicates the number of subsets in which the $i-th$ dimension of the state space $\Sspace$ has to be divided. We consider once per time each dimension $i$ and we divide this mono-dimensional space in a partition of $k$ convex subsets with a constant diameter. By partitioning in this way, the size of subsets can be very different among the different state-dimensions. 
+We assume that the domain of each of the $N$ state variables is a continuous interval. If a variable is unbounded or the bounds are unknown, they are set equal to the minimum and maximum value on the corresponding dimension, observed among the collected samples. 
+For each dimension $i \in N$, it is provided in input a scalar $k$ that indicates the number of subsets in which the $i-th$ dimension of the state space $\Sspace$ has to be divided. We consider once per time each dimension $i$ and we divide this mono-dimensional space in a partition of $k$ convex subsets with a constant diameter. By partitioning in this way, the measure of each bound of the subset can vary a lot among the different state-dimensions. 
 %We allow specifying a different spacing for each dimension.
 If the original state space $\Sspace$ contains an absorbing state, we add an absorbing abstract state to $\Xspace$. This can be useful for modeling indefinite-horizon tasks.\\
 \newline
-The state space partition is not required to be the same across the different iterations of the algorithm, since a new $\delta$-MDP is built at each iteration. For instance, the partition changes at each iteration if we compute the grid bounds from the collected samples. However, we can keep a fixed partition for computational reasons and then obtain some samples whose starting states are outside the grid. Those samples are assigned to the closest cell in the partition.
+The state space partition is not required to be the same across the different iterations of the algorithm, since a new $\delta$-MDP is built at each iteration. For instance, the partition changes at each iteration if we establish the minimum and maximum possible values on some state-dimensions from the collected samples. However, for computational reasons we can avoid to compute a new partition of the state space at the beginning of each iteration and keep a fixed one across the multiple iterations. In the latter case, if we collect a samples whose starting state is outside from the grid, the sample can be assigned to the closest cell in the partition.
 If naively implemented, this aggregation strategy is clearly subject to the \textit{curse of dimensionality}. However, only the abstract states that are actually visited by $\pi_{\vtheta}$ are considered in the next steps of the algorithm, so the size of the $\delta$-\ac{MDP} is polynomial in the number of collected samples\footnote{Efficiently exploring high-dimensional state spaces is still a difficult problem.}.  
-More details on how the abstract state space is constructed and other possible aggregation strategies are given in \todo{specify a section in experiments about the state visited in the task of safety gym}.
+More details on how the abstract state space $\Xspace$ is built and how the chosen aggregation strategy affects the performances of the algorithm are provided in \myChap{chap:exp}.
 
 %\subsection{$\delta$-MDP Estimation}
 \paragraph{Abstract MDP estimation:}\label{sec:mdpest}
 A fundamental aspect in the creation of the $\delta$-\ac{MDP} is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\theta}(s)$.
-To construct the $\delta^{\vtheta}$-\ac{MDP} for the current policy $\pi_{\vtheta}$, we need to estimate the abstract reward function $\wt{R}_{\vtheta}$ and the abstract transition function $\wt{P}_{\vtheta}$. As we previously said, the weighting function $w(s)$ that weighs the abstract functions $\wt{R}_{\vtheta}(X, a)$ and $\wt{P}_{\vtheta}(X'|X, a)$ of the $\delta$-MDP is defined according to $\delta^{\pi}(s)$. The exact computation of the abstract functions would require knowledge of the future state distribution $\delta^{\vtheta}$, which is out of reach. 
+To construct the $\delta^{\vtheta}$-\ac{MDP}, given the current policy $\pi_{\vtheta}$, we need to estimate the abstract reward function $\wt{R}_{\vtheta}$ and the abstract transition function $\wt{P}_{\vtheta}$. As we previously said, the weighting function $w(s)$ that weighs the abstract functions $\wt{R}_{\vtheta}(X, a)$ and $\wt{P}_{\vtheta}(X'|X, a)$ of the $\delta$-\ac{MDP} is defined according to $\delta^{\vtheta}(s)$. The exact computation of the abstract functions would require knowledge of the future state distribution $\delta^{\vtheta}$, which is out of reach. 
 However, we can write the abstract functions as expected values:
 \begin{align}
 \wt{R}_{\vtheta}(X, a) &= \EV_{s \sim p(s | X)} R(s, a) \label{eq:mcr}\\
@@ -101,36 +104,55 @@ In this way, we can simply estimate the abstract function via Monte Carlo estima
 %\wt{P}_{\vtheta}(X'|X,a) &= \frac{1}{|\widetilde{s} \in X|} \sum_{\widetilde{s} \in X} \int_{x'} P(s' | \widetilde{s}, a) \,ds
 %\end{align*}
 %The estimated $\delta^{\pi}(s)$ results to be equal to $\frac {|s|} {|\widetilde{s} \in X|}$, where $s \in X$ and we indicate with $\widetilde{s}$ a generic sampled state.
-While this is enough for $\wt{R}_{\vtheta}(X, a)$, since $R(s, a)$ is usually known or designed by humans, estimating $\wt{P}_{\vtheta}(X'|X, a)$ for all abstract states and actions without knowledge of $P(\cdot|s, a)$ requires more effort. All we get from agent-environment interactions is a finite set of samples $(s,a,s')$. This means that, for almost all the actions in $\Aspace$, we do not have any samples. Fortunately, we can leverage our Lipschitz assumptions to fill in this missing information.
-%
-Let us first consider deterministic environments, where $P(\cdot|s, a)$ is a Dirac delta function that exactly identifies the next state $s'$ resulting from a state-action pair $(s,a)$. For simplicity, we denote this deterministic mapping as $f:\Sspace\times\Aspace\to\Sspace$ and write $s'=f(s,a)$.
-Let $\Delta(s, a) \coloneqq f(s) - s$ be the state difference obtained transitioning from pair $(s,a)$. From Assumption~\ref{ass:lipmdp}, fixed an action $a\in\Aspace$, we obtain:
+While this is enough for $\wt{R}_{\vtheta}(X, a)$, since $R(s, a)$ is usually known for all the state-action pairs $(s,a)$ or designed by humans, estimating $\wt{P}_{\vtheta}(X'|X, a)$ for all the abstract states and actions without any knowledge of $P(\cdot|s, a)$ requires more effort. All we get from the agent-environment interactions is a finite set of samples $(s,a,s')$. This means that, for almost all the actions in $\Aspace$, we do not have any samples. Fortunately, we can leverage our Lipschitz assumptions to fill in this missing information.\\
+\newline
+We first consider deterministic environments, where $P(\cdot|s, a)$ is a Dirac delta function that exactly identifies the next state $s'$ resulting from a state-action pair $(s,a)$, to be more precise:
+\begin{align}
+P(s'|s,a)= 
+\begin{cases}
+1 & \text{if } s'=f(s,a)\\
+0 & \text{otherwise}
+\end{cases}
+\end{align}
+For simplicity, we denote this deterministic mapping as $f:\Sspace\times\Aspace\to\Sspace$ and write $s'=f(s,a)$.
+Let $\Delta(s, a) \coloneqq f(s,a) - s$ be the state difference obtained transitioning from $s$ to $s'$. From Assumption~\ref{ass:lipmdp} on Lipschitz \ac{MDPs} and fixed an action $a\in\Aspace$, we obtain:
 %
 \begin{align}\label{eq:deltas}
 \norm{\Delta (s, a) - \Delta (\widetilde{s}, a)} \leq L_{\Delta}\norm{s - \widetilde{s}},
 \end{align}
 %
-for all $s,\wt{s}\in\Sspace$, hence the state difference is also Lipschitz continuous. A valid Lipschitz constant $L_{\Delta}$ can be obtained from Assumption~\ref{ass:lipmdp} as $(1+L_{P})$. Under additional assumptions, such as the linearity of the transition function, we can obtain constants less than one or even zero. The latter happens when the state difference depends only on the action, which can be realistic, or at least a good approximation, for some continuous control problems. We discuss these different settings and provide detailed computations in \mySec{sec:absmdp}.
+for all $s,\wt{s}\in\Sspace$, hence the state difference is also Lipschitz continuous. A valid Lipschitz constant $L_{\Delta}$ that can be obtained from Assumption~\ref{ass:lipmdp} is $(1+L_{P})$, as we show below. Since the Kantorovich distance between two Dirac delta functions is equal to the distance of their locations, we can use Assumption~\ref{ass:lipmdp} to obtain a Lipschitz constant $L_{\Delta}$ for state-difference function $\Delta$. For every $a\in\Aspace$ and $s,\wt{s}\in\Sspace$:
+\begin{align}
+\norm{\Delta(s,a)-\Delta(\wt{s},a)} &=
+\norm{f(s,a) - s - f(\wt{s},a) + \wt{s}} \nonumber\\
+&\leq \norm{f(s,a)-f(\wt{s},a)} + \norm{s-\wt{s}} \label{p:23}\\
+&= \Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},a)\right) + \norm{s-\wt{s}} \nonumber\\
+&\leq L_{P}\norm{s-\wt{s}} + \norm{s-\wt{s}} \label{p:22}\\
+&\leq L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta} = \left(1 + L_{P}\right), \label{p:18}
+\end{align}
+where~\eqref{p:23} is from the triangle inequality and~\eqref{p:22} is from Assumption~\ref{ass:lipmdp}.\\
+\newline
+Under additional assumptions, such as the linearity of the transition function $f(s,a)$, we can obtain constants lower than one or even equal to zero. The latter happens when the state difference depends only on the action, which can be realistic, or at least a good approximation, for some continuous control problems. We discuss these different settings and provide detailed computations of the Lipschitz constants in \mySec{sec:absmdp}.
 %
-When $L_{\Delta}=0$, we can easily generate extra "fictitious" samples. For instance, given sample $(s,a,s')$, we can generate $(\wt{s},a,\wt{s}')$ for any other state $\wt{s}\in\Sspace$ by setting $\wt{s}' = \wt{s} + (s'-s)$. This way, for each action $a$ performed by policy $\pi_{\vtheta}$ in abstract state $X$, we can have several (fictitious) samples (one for each visited state $s\in X$). With these samples, we can simply estimate $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the next states that fall into $X'$.
+When $L_{\Delta}=0$, we can easily generate extra "fictitious" samples. For instance, given sample $(s,a,s')$, we can generate $(\wt{s},a,\wt{s}')$ for any other state $\wt{s}\in\Sspace$ by setting $\wt{s}' = \wt{s} + (s'-s)$. This way, for each action $a$ performed by policy $\pi_{\vtheta}$ in abstract state $X$, we can have several (fictitious) samples (one for each visited state $s\in X$). With these samples, we can simply estimate $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the next states that fall into $X'$ when we consider samples and fictitious samples involving any state $s \in X$ and the action $a$.
 When $L_{\Delta}\neq 0$, we can still use~\eqref{eq:deltas} to get a region containing $\wt{s}'$.
 %\begin{align}
 %	\norm{\wt{s}' - \left(\wt{s}+(s-s')\right)} \leq L_{\Delta}\norm{s-\wt{s}}.
 %\end{align}
-From this, we can estimate lower and upper bounds on the transition function. As a result, the $\delta$-MDP will be a \textit{Bounded MDP}~\citep{givan2000bounded} instead of a regular one.
+From this, we can estimate lower and upper bounds on the transition function $\wt{P}$. As a result, the $\delta$-MDP will be a \textit{Bounded MDP}~\citep{givan2000bounded} instead of a regular one.
 %
 In the case of stochastic environments, we follow a different approach for estimating the abstract transition kernel. We define a maximum-likelihood problem using data sampled from $\pi_{\vtheta}$ \textit{and} fictitious samples. We then add special constraints to this problem as to enforce the Lipschitz continuity of $\wt{P}_{\vtheta}(X'|X,a)$ \wrt actions. The resulting problem is still convex and can be solved with standard optimization tools.
 %the estimation of $\wt{P}_{\vtheta}(X'|X, a)$ is performed by solving a constrained optimization problem whose goal is to maximize the likelihood of the samples collected. The constraints reflect the Lipschitz properties of $\wt{P}_{\vtheta}(X'|X,a)$: the distance between $\wt{P}_{\vtheta}(X'|X, a)$ and $\wt{P}_{\vtheta}(X'|X, \widetilde{a})$ is bound by a $f(d_A(a, \widetilde{a}))$.
-Details on bounded-MDPs, their solution and the constrained optimization approach are provided in \mySec{sec:absmdp}. 
+Details on bounded-MDPs are provided in \mySubsec{subsec:bmdp}, details on their solution and on the constrained optimization approach are provided in \mySec{sec:absmdp}. 
 
 %\subsection{Value Iteration on $\delta$-MDP}
 \paragraph{Solving the abstract MDP:}
 In the previous paragraph, we have proposed a way to estimate the abstract transition function for state-action pairs not experienced by the agent, by exploiting the assumptions about the regularity of the environment. However, this still applies only to the actions actually performed by the agent. As a result, our approximation of the $\delta$-\ac{MDP} has a finite action set. This introduces a further model bias, but allows us to employ dynamic programming to find the optimal abstract policy. This kind of error can be reduced by increasing the number of collected episodes, or the control frequency. Furthermore, under our Lipschitz assumptions, the finite actions actually performed by the agent are supposedly good representatives for the other ones.\\
 \newline
-We solve this approximate $\delta$-\ac{MDP} via value iteration~\citep{bertsekas1996neuro}, with a stopping condition for computational reasons on the max-norm distance between consecutive state-value functions.
-The value iteration on the $\delta$-\ac{MDP} is stopped when, said $V_i(X)$ the value function of state $X$ at the $i-th$ iteration and $\epsilon$ the constant used as a threshold in the algorithm, 
+We solve this approximate $\delta$-\ac{MDP} via value iteration (\mySubsec{subsec:dp}), with a stopping condition (introduced for computational reasons) on the max-norm distance between consecutive state-value functions.
+The value iteration on the $\delta$-\ac{MDP} is stopped when, said $V_k(X)$ the value function of state $X$ at the $k-th$ iteration and $\epsilon$ the constant used as a threshold in the algorithm, 
 \begin{align}
-|V_i(X) - V_{i-1}(X)| < \epsilon \quad \forall X \in \Xspace.
+|V_k(X) - V_{k-1}(X)| < \epsilon \quad \forall X \in \Xspace.
 \end{align}
 In the case of multiple optimal policies, we keep track of the entire set of optimal actions for each abstract state.
 We may need to evaluate abstract states for which no samples have been collected by the agent. We propose a risk-averse solution, which consists of considering these "unknown" abstract states as absorbing and set their value to the lowest known value. 
@@ -143,35 +165,16 @@ Given the optimal abstract policy $\rho^*$, its concretization $\Conc\rho^*$ is 
 \norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
 + \lambda\norm{\vtheta'-\vtheta},
 \end{align} 
-When the abstract optimal policy $\rho^{*}$ prescribes multiple optimal actions for a certain abstract state $X \in \Xspace$, we consider the error-minimizing action among the optimal ones for the samples related to the abstract state $X$, in order to facilitate the projection.\\
+where the expression is evaluated for all the collected samples $(s,a,s')$. 
+When the abstract optimal policy $\rho^{*}$ prescribes multiple optimal actions for a certain abstract state $X \in \Xspace$, in order to facilitate the projection, we consider for each sample $(s,a,s')$, with $s \in X$, that $\Conc\rho(s)$ is the action with the smallest euclidean distance from the action prescribed by $\pi_{\vtheta}(s)$, among the optimal actions related to the abstract state $X$.\\
 \newline
-The first term from~\eqref{eq:regress} is the \acf{RMSE} loss, weighted by the future state distribution $\delta^{\vtheta}$. For differentiable policies (including neural networks), this loss can be minimized via gradient descent from the samples collected with $\pi_{\vtheta}$. The second term from~\eqref{eq:regress} penalizes solutions that are too far from the current policy parameters and it can be used as a regularization term. In practice, the regularization coefficient $\lambda$ can be tuned as a meta-parameter. Note that, without this projection step, there would be no room for further policy improvement, as the next $\delta$-\ac{MDP} would have just one action per abstract state. The projection error actually allows the agent to evaluate new actions and visit new regions of the state space. 
+The first term from~\eqref{eq:regress} is the \acf{RMSE} loss, weighted by the future state distribution $\delta^{\vtheta}$. For differentiable policies (including neural networks), this loss can be minimized via gradient descent from the samples collected with $\pi_{\vtheta}$. The second term from~\eqref{eq:regress} penalizes solutions that are too far from the current policy parameters and it can be used as a regularization term in the regression problem. In practice, the regularization coefficient $\lambda$ can be tuned as a meta-parameter. Note that, without this projection step, there would be no room for further policy improvement, as the next $\delta$-\ac{MDP} would have just one action per abstract state. The projection error actually allows the agent to evaluate new actions and visit new regions of the state space. 
 
 \section{Abstract Transition Function construction}\label{sec:absmdp}
-In this section, we provide additional details on the construction of the $\delta$-MDP outlined in Section~\ref{sec:mdpest}, in particular \wrt the estimation of the abstract transition function. We propose different approaches depending on the nature of the environment.
+In this section, we provide additional details on the construction of the $\delta$-MDP outlined in Section~\ref{sec:mdpest}, in particular we focus on the estimation of the abstract transition function $\wt{P}$. We propose different approaches that depend on the nature of the environment considered in the task.
 
 \subsection{Deterministic linear environments}\label{app:b1}
-In deterministic environments, the transition function is a Dirac delta function with 
-\begin{align}
-P(s'|s,a)= 
-\begin{cases}
-1 & \text{if } s'=f(s,a)\\
-0 & \text{otherwise}
-\end{cases}
-\end{align}
-where $f(s,a)$ is a function that outputs the arriving state $s'$ for an input pair $(s,a)$.
-Since the Kantorovich distance between two Dirac delta functions is equal to the distance of their locations, we can use Assumption~\ref{ass:lipmdp} to obtain a Lipschitz constant $L_{\Delta}$ for state-difference function $\Delta$. For every $a\in\Aspace$ and $s,\wt{s}\in\Sspace$:
-\begin{align}
-\norm{\Delta(s,a)-\Delta(\wt{s},a)} &=
-\norm{f(s,a) - s - f(\wt{s},a) + \wt{s}} \nonumber\\
-&\leq \norm{f(s,a)-f(\wt{s},a)} + \norm{s-\wt{s}} \label{p:23}\\
-&= \Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},a)\right) + \norm{s-\wt{s}} \nonumber\\
-&\leq L_{P}\norm{s-\wt{s}} + \norm{s-\wt{s}} \label{p:22}\\
-&\leq L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta} = \left(1 + L_{P}\right), \label{p:18}
-\end{align}
-where~\eqref{p:23} is from the triangle inequality and~\eqref{p:22} is from Assumption~\ref{ass:lipmdp}.
-
-We call \textit{linear} a deterministic environment in which $f(s, a)$ is linear \wrt the input variables $s$ and $a$. For these environments, we can write $f(s,a) = As + Ba$, where $A$ and $B$ are (possibly unknown) constant matrices. With $f(s,a)$ defined in this way, we can obtain a possibly smaller Lipschitz constant for $\Delta$:
+\noindent We call \textit{linear} a deterministic environment in which $f(s, a)$ is linear \wrt the input variables $s$ and $a$. For these environments, we can write $f(s,a) = As + Ba$, where $A$ and $B$ are (possibly unknown) constant matrices. With $f(s,a)$ defined in this way, we can obtain a Lipschitz constant for $\Delta$ possibly smaller than the one derived in (\ref{p:18}):
 \begin{align}
 \norm{\Delta(s,a)-\Delta(\wt{s},a)} &= \norm{As+Ba-s - \left(A\wt{s}+Ba-\wt{s}\right)} \nonumber \\
 &= L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta}=\norm{A-\mathbb{I}}. \label{p:20}
@@ -196,7 +199,8 @@ When the state space is $n-$dimensional with $n\geq 2$, the interval that we est
 \newline
 In tasks where it is required a lot of precision in order to estimate $\wt{s'}$, the computed intervals could be not tight enough to represent $\wt{s'}$ with the required accuracy. We can increase the precision by computing a second interval on each $\wt{s'}$ and considering the intersection of the two intervals on $\wt{s'}$ as the most precise estimate. The second interval is calculated by considering two state-action pairs having the \emph{same} state and different \emph{actions}:
 \begin{align}
-\norm{\Delta(\wt{s},a) - \Delta(\wt{s}, \wt{a})} = \norm{A\wt{s}+Ba-\wt{s} - \left(A\wt{s}+B\wt{a}-\wt{s}\right)} &= \norm{B} \norm{a-\wt{a}}. \label{p:21}
+\norm{\Delta(\wt{s},a) - \Delta(\wt{s}, \wt{a})} &= \norm{A\wt{s}+Ba-\wt{s} - \left(A\wt{s}+B\wt{a}-\wt{s}\right)} \nonumber \\
+&= L_{\Delta(a)} \norm{a-\wt{a}} \qquad \text{ with } L_{\Delta(a)}=\norm{B}. \label{p:21}
 \end{align}
 Similarly to~\eqref{p:19}, we obtain the new interval containing $\wt{s'} = f(\wt{s}, a)$:
 \begin{align}
@@ -208,8 +212,8 @@ Hence, given (real) samples $(s_1,a_1,s_1')$ and $(s_2, a_2, s_2')$, we can gene
 
 \subsection{Deterministic non-linear environments}
 %If the environment is non-linear, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$ or we can estimate a smaller $L_{\Delta}$ from the samples and use it to compute the intervals on $\wt{s'}$ in the same way we showed for linear environments. Even if we can no longer consider $f(s,a)$ as a linear function in $s$ and $a$, the environment still satisfies the Lipschitz properties of regularity. If the constants $L_{\Delta}$ estimated from the samples are smaller than the real one, the intersection of two estimated intervals related to some $\wt{s'}$ can be empty. When it happens, we simply discard the intervals and do not generate the fictitious sample.
-When the (deterministic) transition function is non-linear, we are not able to exactly predict the next sate of un-sampled state-action pairs. However, we can still exploit the Lipschitz assumptions to obtain upper and lower bounds (or multi-dimensional regions) for the next-states. To do so, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$, as shown above~\eqref{p:18} for general deterministic transitions, or we can estimate a smaller $L_{\Delta}$ from data.
-The result is a \emph{bounded-parameter} abstract \ac{MDP} (\mySubsec{subsec:bmdp}) instead of a regular one.\\
+When the (deterministic) transition function is non-linear, we are not able to exactly predict the next state of un-sampled state-action pairs. However, we can still exploit the Lipschitz assumptions to obtain upper and lower bounds (or multi-dimensional regions) for the next-states. To do so, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$, as shown in~\eqref{p:18} for general deterministic transitions, or we can estimate a smaller $L_{\Delta}$ from data.
+The result is a \emph{bounded-parameter} abstract \ac{MDP} (see \mySubsec{subsec:bmdp} for details) instead of a regular one.\\
 \newline
 If we have $L_{\Delta} \neq 0$ and we estimate with~\eqref{p:18} the fictitious arriving state $\wt{s'} = f(\wt{s}, a)$, where $(\wt{s},a)$ is an unseen state-action pair, we obtain a region including $\wt{s'}$ instead of the exact point $\wt{s'}$. The information provided by the estimation of the fictitious arriving states is not sufficient to compute an exact $\wt{P}_{\vtheta}(X'|X,a)$ for each abstract state-action pair $(X,a)$ of the $\delta$-\ac{MDP}. The value of each $\wt{P}_{\vtheta}(X'|X,a)$ is a range of probabilities, whose lower and upper bounds are computed by evaluating all the estimated intervals related to some $\wt{s'}=f(\wt{s}, a)$, where $\wt{s} \in X$. The intervals estimated for fictitious arriving states can be entirely contained in a single abstract state $X' \in \Xspace$ or they can overlay multiple abstract states of $\Xspace$. We estimate the lower bound of $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the intervals entirely contained into $X'$ and the upper bound of $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the intervals that overlay $X'$. Once we have $\wt{P}_{\vtheta}(X'|X,a)$, we can build the $\delta$-\ac{MDP} as a \ac{BMDP}. According to ~\citep{givan2000bounded}, the \ac{BMDP} can be solved following an optimistic or a pessimistic criterion. Motivated by risk-aversion, we choose the second one, so as to obtain the solution of the exact \ac{MDP} whose transition function is the $\wt{P}_{\vtheta}(X'|X,a)$ that maximizes the probability of transitioning to the abstract states with the lowest value function.
 
@@ -217,17 +221,17 @@ If we have $L_{\Delta} \neq 0$ and we estimate with~\eqref{p:18} the fictitious 
 %When we estimate the arriving state $\wt{s'}$ resulting from an unsampled pair $(\wt{s},a)$, we exploit the information provided by some $(s,a)$ pairs sampled from a deterministic environment. 
 %In stochastic environments, the estimation of fictitious $\wt{s'}$ (and consequently the estimation of the abstract transition function $\wt{P}(X'|X,a)$) cannot be done with the same approach we use in deterministic environments. Indeed, in stochastic environments the arriving state $s'$ of every collected sample contains an additive noise, independent from the noise of the other collected samples. Furthemore, in a stochastic environment the transition function $P(\cdot|s,a)$ is not a Dirac delta function and then we cannot derive $L_{\Delta}$ as in~\eqref{p:18}.
 %we cannot easily estimate the arriving states $\wt{s'}$ for unseen pairs $(\wt{s},a)$: with a single sample $(s,a,s')$ we propagate its noise to the estimated $\wt{s'}$, with two samples we compute two different regions (that should contain $\wt{s'}$) whose intersection can be empty in many cases. 
-For stochastic environments, we propose a different approach for estimating the abstract transition kernel from the collected data while exploiting regularities. To do so, we require a stronger assumption on the transition function \wrt actions:
+For stochastic environments, we propose a different approach for estimating the abstract transition kernel from the collected data while exploiting regularities of the environment. To do so, we require a stronger assumption on the transition function $P$ \wrt actions:
 %
 \begin{assumption}\label{ass:lipmdp2}
 	For all $s\in\Sspace$ and $a,\wt{a}\in\Aspace$:
 	\begin{align}
 	&\mathop{TV}\left(P(\cdot|s,a), P(\cdot| s,\wt{a})\right) \leq L_{TV}\norm{a - \wt{a}}, \\
 	\end{align}
-	for some positive real constant $L_{TV}$, where $\mathop{TV}(\cdot,\cdot)$ denotes the total variation distance. \todo{definition of TV}
+	for some positive real constant $L_{TV}$, where $\mathop{TV}(\cdot,\cdot)$ denotes the total variation distance. \todo{definire sotto la Kantorovich e mettere un ref}
 \end{assumption}
 %
-We can use this assumption to derive a Lipschitz constant for the abstract transition function:
+\noindent We can use this assumption to derive a Lipschitz constant for the abstract transition function:
 \begin{align}
 \Big|\wt{P}(X'|X,a) - \wt{P}(X'|X,\wt{a})\Big| &\leq \int_{X} w(s) \int_{X'} \Big|P(s'|s,a) - P(s'|s,\wt{a})\Big| \de s' \de s \nonumber\\
 &\leq \int_{X}w(s)\int_{\Sspace} \Big|P(s'|s,a) - P(s'|s,\wt{a})\Big| \de s' \de s \label{p:24} \\
@@ -261,12 +265,12 @@ We then add additional constraints that enforce in our estimate of $\wt{P}$ the 
 \end{align}
 %
 This is still a convex program and can be solved with standard optimization tools.
-In many cases, we can still generate fictitious samples as in the deterministic setting (see the next Subsection). These are simply added to the dataset $\Dataset$. 
+In many cases, we can still generate fictitious samples as in the deterministic setting (see \mySubsec{subsec:app2.4}). These are simply added to the dataset $\Dataset$. 
 
 \subsection{Linear-Quadratic Gaussian Regulator}\label{subsec:app2.4}
-The Double Integrator task presented in Section~\ref{sec:mass} is a special case of Linear-Quadratic Gaussian Regulator~\citep[LQG,]{peters2002policy}. This means the transition function is linear plus an additive zero-mean Gaussian noise.
+The Double Integrator task presented in Section~\ref{sec:mass} is a special case of Linear-Quadratic Gaussian Regulator~[\cite{peters2002policy}]. This means the transition function is linear plus an additive zero-mean Gaussian noise.
 Since this kind of environment is stochastic, we adopt the constrained maximum-likelihood approach presented in~\ref{sec:app2.3}. 
 However, we can exploit the underlying linearity of the system to generate fictitious samples.
-For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed with equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. 
+For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed from the equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. 
 In Double Integrator, the Gaussian noise is added to each dimension of the state independently from the other one. 
-In this case, we can define a separate constraint~\eqref{p:26} for each of the two dimensions of the state space, for increased precision, possibly with a different constant $L_{\wt{P}}$ for each dimension.
+In this case, we can define a separate constraint~\eqref{p:26} for each of the two dimensions of the state space, for increased precision, possibly with a different constant $L_{\wt{P}}$ for each dimension. \todo{conviene esplicitare i constraints di questo caso particolare, che riguardano le sommatorie delle probabilità rispetto a ogni dimensione dello state space?}

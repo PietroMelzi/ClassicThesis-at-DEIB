@@ -215,7 +215,7 @@ The exact transition function $P(\cdot|s,a)$ is defined by assigning the upper b
 \newline
 \hl{According to} [\cite{givan2000bounded}], the \ac{IVI} \hl{algorithm is able to converge to $V^{*}_{\updownarrow \text{opt}}$ or $V^{*}_{\updownarrow \text{pes}}$ in a polynomial number of iterations, where polynomial is relative to the problem size.}
 
-\subsection{Lipschitz \ac{MDPs}}
+\subsection{Lipschitz \ac{MDPs}} \label{sub:lipmdp}
 We introduce the notion of \emph{Lipschitz continuity} in order to define some properties of regularity in the \ac{MDP}. These properties can be exploited in policy gradient algorithms, for instance in [\cite{pirotta2015policy}] it is shown how they can ensure a performance improvement at each iteration of policy-parameter updates. In this section we provide basic concepts related to Lipschitz continuity and useful bounds that will be exploited in our work.
 \begin{definition}[Lipschitz continuity]
 Given two metric spaces $(X, d_X)$ and $(Y, d_Y)$ where $d_X$ and $d_Y$ denote the corresponding metric functions, a function $f: X \rightarrow Y$ is called $L_f$-\acf{LC} if
@@ -240,7 +240,7 @@ Given two probability measures $p$ and $q$, the Kantorvich measure $\Kant(p, q)$
 \begin{assumption}[Lipschitz MDP]\label{ass:lipmdp}
 	For all $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
 	\begin{align}
-	&\Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},\wt{a})\right) \leq L_{P}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right), \\
+	&\Kant\left(P(\cdot|s,a), P(\cdot| \wt{s},\wt{a})\right) \leq L_{P}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right), \label{eq:liptf}\\
 	&\left|R(s,a) - R(\wt{s},\wt{a})\right| \leq L_{R}d_{\Sspace\Aspace}\left((s,a),(\wt{s},\wt{a})\right),
 	\end{align}
 	for some positive real constants $L_{P}$ and $L_{R}$.
