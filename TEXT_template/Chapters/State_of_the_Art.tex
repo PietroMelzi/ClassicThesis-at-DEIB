@@ -9,7 +9,7 @@
 where $\widehat{\nabla}J(\vtheta) \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\vtheta$ and $\alpha>0$ is the step size, a scalar that controls the size of each update and can change through time. In \ac{PG} methods, the policy $\pi(a|s,\vtheta)$ has to be differentiable with respect to its parameters $\vtheta \in \mathbb{R}^d \quad \forall s \in \Sspace, \forall a \in \Aspace$.\\
 \newline
 With appropriate policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas for greedy policies the action probabilities may change enormously for a small change in the estimated action values. Stronger convergence guarantees are available for policy-gradient methods and approximate gradient ascent can be performed as in \myEq{eq:grad}. According to [\cite{peters2010pg}], if the gradient estimate is unbiased\footnote{In [\cite{williams1992simple}] it is proved that an unbiased estimate of the gradient can be obtained from samples without the assistance of approximate functions.} and learning rates fulfill the following conditions:
-\begin{align}\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty\end{align} \todo{ho cambiato paper, qui le condizioni coincidono}
+\begin{align}\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty\end{align}
 the learning process is guaranteed to converge to at least a local optimum.\\
 \newline
 Some methods also learn approximations to value-functions and are called \emph{actor-critic methods}, where "actor" is a reference to the learned policy, and "critic" refers to the learned value function. In these methods, the function approximation for value function introduces bias but reduces variance and accelerates learning.
@@ -58,11 +58,12 @@ In [\cite{Peters2008ReinforcementLO}] \hl{a different formulation for the estima
 \end{align}
 \hl{Apart from the baseline $b_l$, this expression is equivalent to} (\ref{eq:estrein}). 
 \hl{In this work, we consider the GPOMDP estimation of gradient with the variance-minimizing baseline provided by} [\cite{Peters2008ReinforcementLO}]:
-\begin{align} b_l = \frac{\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{}(a_k|s_k)\Big)^2 \gamma^{l}r_{l+1}\Big\rangle_{N}} {\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{\vtheta}(a_k|s_k)\Big)^2\Big\rangle_{N}}
-\end{align} \todo{Come fare i quadrati? Li ho trovati scritti così in tutti i paper}
+\begin{align} b_l = \frac{\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{}(a_k|s_k)\Big)^2 \gamma^{l}r_{l+1}\Big\rangle_{N}} {\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{\vtheta}(a_k|s_k)\Big)^2\Big\rangle_{N}},
+\end{align}
+\hl{where the square operation is performed in an element-wise manner on the vector.}
 This is one of the most common policy gradient algorithms and we use it in this work to compare our algorithm with a standard algorithm in policy search.
 
-\paragraph{Policy Gradient with Parameter-Based Exploration(PGPE)} \label{subsec:pgpe}
+\paragraph{Policy Gradient with Parameter-Based Exploration (PGPE)} \label{subsec:pgpe}
 \ac{PGPE} [\cite{sehnke2008PolicyGradient}] is a method that estimates a gradient by directly sampling in parameter space. In \ac{PGPE} the policy is defined by a distribution over the parameters of deterministic controllers that we indicate with the function $\mu_{\vtheta}: \Sspace \to \Aspace$. At the beginning of each step, the parameter $\vtheta$ of the controller is sampled and then, the deterministic policy $\mu_{\vtheta}$ generated from $\vtheta$ is followed for all the episode length. Even if samples are collected with a detrministic policy, the choice of the policy is stochastic and then unexpected behaviour could arise in the task.\\
 \newline
 The variance of the estimates obtained with \ac{PGPE} is lower than the variance of the estimates obtained with REINFORCE [\cite{zhao2013efficient}]. This is due to the fact that, in REINFORCE, a repetitive sampling from a stochastic policy injects noise in the gradient estimate at every time-step. Furthemore, the variance increases linearly with the length of the history since each state depends on the entire sequence of previous samples.\\
@@ -84,12 +85,12 @@ From \ref{eq:pgpej}, we can write the expected value of the gradient of $J$ \wrt
 where $\vtheta$ is sampled at the beginning of the episode and $h$ is resulting from the deterministic controller $\mu_{\vtheta}$. \hl{This is a} \acf{BBO} \hl{approach because it uses a constant policy perturbation during policy execution and it stores only scalar return in the trajectory} [\cite{stulp2012pol}]. \hl{Differently from REINFORCE, for instance,} \ac{PGPE} \hl{does not use information fron single time steps and, then, it does not exploit the temporal structure of} \ac{RL} problems.\\
 \newline
 Usually, we can consider the parameter $\rho$ learnt by the algorithm as $\rho = \Big( \{\mu_i\}, \{\sigma_i\} \Big)$, where $\mu_i$ and $\sigma_i$ are the parameters that determine an indipendent normal distribution
-\paragraph{Deterministic Policy Gradient(DPG)} \label{subsec:dpg}
+\paragraph{Deterministic Policy Gradient (DPG)} \label{subsec:dpg}
 \ac{DPG} [\cite{article}] is a class of algorithms that learn a parametric deterministic policy $\mu_{\vtheta}$ defined as $\mu_{\vtheta}: S \to A$. The approach in \ac{DPG} is similar to the one used in \ac{PG} methods that learn stochastic policies $\pi_{\vtheta}$, where the gradient of performance is estimated according to the Policy Gradient Theorem (\ref{subsec:pgt}). However, for deterministic policies the gradient of performance is slightly different than the one computed by the theorem (\ref{eq:pgt}).\\
 \newline
 Indeed, by considering a deterministic policy $\mu_{\vtheta}$ with parameter vector $\vtheta \in \mathbb{R}^n$ and performance objective $J(\mu_{\vtheta}) = \mathbb{E}_{s \sim \delta^{\mu}}[R(s, \mu_{\vtheta}(s))]$, the expression for \emph{Deterministic Policy Gradient} \hl{derived by the theorem is the following:}
 \begin{theorem}[Deterministic Policy Gradient Theorem] \label{th:dpgt}
-	Suppose that $P(s'|s,a), \nabla_aP(s'|s,a), \mu_{\vtheta}(s), \nabla_{\vtheta} \mu_{\vtheta}(s), R(s,a), \nabla_a R(s,a), \mu(s)$ \todo{mu usato per distribuzione iniziale degli stati e per policy deterministiche: correggere!!!!} are continuous in all parameters and variables $s, a, s'$.\todo{x variable in Sutton appendix?} Then, 
+	Suppose that $P(s'|s,a), \nabla_aP(s'|s,a), \mu_{\vtheta}(s), \nabla_{\vtheta} \mu_{\vtheta}(s), R(s,a), \nabla_a R(s,a), \mu(s)$ \hl{(the initial-state distribution)} \todo{mu usato per distribuzione iniziale degli stati e per policy deterministiche: correggere!!!!} are continuous in all parameters $\vtheta$ and variables $s, a, s'$. Then, 
 	\begin{align}
 	\nabla_{\vtheta}J(\mu_{\vtheta}) = \mathbb{E}_{s \sim \delta^{\mu}} \Big[\nabla_{\vtheta} \mu_{\vtheta} (s) \nabla_a Q^{\mu}(s,a)|_{a = \mu_{\vtheta} (s)}\Big].
 	\end{align}
