@@ -90,7 +90,7 @@ More details on how the abstract state space $\Xspace$ is built and how the chos
 
 %\subsection{$\delta$-MDP Estimation}
 \paragraph{Abstract MDP estimation:}\label{sec:mdpest}
-A fundamental aspect in the creation of the $\delta$-\ac{MDP} is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\theta}(s)$.
+A fundamental aspect in the creation of the $\delta$-\ac{MDP} is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\vtheta}(s)$.
 To construct the $\delta^{\vtheta}$-\ac{MDP}, given the current policy $\pi_{\vtheta}$, we need to estimate the abstract reward function $\wt{R}_{\vtheta}$ and the abstract transition function $\wt{P}_{\vtheta}$. As we previously said, the weighting function $w(s)$ that weighs the abstract functions $\wt{R}_{\vtheta}(X, a)$ and $\wt{P}_{\vtheta}(X'|X, a)$ of the $\delta$-\ac{MDP} is defined according to $\delta^{\vtheta}(s)$. The exact computation of the abstract functions would require knowledge of the future state distribution $\delta^{\vtheta}$, which is out of reach. 
 However, we can write the abstract functions as expected values:
 \begin{align}
@@ -158,7 +158,7 @@ In the case of multiple optimal policies, we keep track of the entire set of opt
 We may need to evaluate abstract states for which no samples have been collected by the agent. We propose a risk-averse solution, which consists of considering these "unknown" abstract states as absorbing and set their value to the lowest known value. 
 %This strategy follows a risk-minimization principle: to discourage actions that could bring the agent in unexplored macrostates. If the macrostate is worth it, the agent should be able to reach it in more time but in a safe manner. 
 
-%\subsection{Projection on Parametric Space $\theta$}
+%\subsection{Projection on Parametric Space $\vtheta$}
 \paragraph{Projection:}
 Given the optimal abstract policy $\rho^*$, its concretization $\Conc\rho^*$ is easily obtained by copying the action selected by $\rho^{*}$ for all the states of the same abstract state. We then need to represent $\Conc\rho^{*}$ in the space $\Pi_{\Theta}$ of the original policy $\pi_{\vtheta}$. This projection phase can be approached as a regression problem, where the target for $\pi_{\vtheta'}(s)$ is $\Conc\rho^*(s)$. The problem consists in finding the parameter $\vtheta'$ that minimizes the following expression:
 \begin{align}\label{eq:regress}
