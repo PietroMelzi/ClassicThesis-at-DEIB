@@ -11,17 +11,7 @@
 \let\cleardoublepage\relax
 
 \chapter*{Abstract}
-An abstract is a brief of a research article, thesis, review,
-conference proceeding or any in-depth analysis of a particular
-subject or discipline, and is often used to help the reader
-quickly ascertain the paper's purpose. When used, an abstract
-always appears at the beginning of a manuscript or typescript,
-acting as the point-of-entry for any given academic paper or
-patent application. Abstracting and indexing services for various
-academic disciplines are aimed at compiling a body of literature
-for that particular subject.
-
-Max 2200 characters, spaces included.
+In reinforcement learning, policy optimization algorithms normally rely on action randomization to make the learning problem easier and to guarantee a sufficient exploration of all the situations that can appear in the task. Action randomization allows to execute and evaluate actions that otherwise could not be considered by the algorithm. However, this practice may be unacceptable in real-life applications, such as industrial ones, where safety is a concern and deviations from usual behavior are not welcome by stakeholders. There exist multiple and not exclusive definitions of safety in reinforcement learning, as a consequence safety requirements can be modeled and included in the tasks in different ways. We consider the challenging scenario in which a learning agent is deployed in the real world and must be able to improve on-line without performing random actions, in order to ensure a safe exploration throughout the learning process. For the first time, to the best of our knowledge, we propose a truly deterministic policy optimization algorithm for continuous domains. To design this algorithm, we require the validity of some assumptions on the regularity of the environment, that we judge easy to meet in the considered scenarios. We also apply state aggregation in order to build an abstract model of the environment. We want to generalize, in the abstract model and from the information collected by the agent, all the unobserved situations without performing any random action. State aggregation is used to exploit passive exploration, necessary to ensure policy optimization. The proposed approach is tested on simulated continuous control tasks, both in the case of learning from scratch and in the case of having previous knowledge of the problem. The results obtained from the experiments are promising and encourage a future development of some aspects of this work.
 
 \vfill
 \newpage
