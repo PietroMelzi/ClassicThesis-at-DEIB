@@ -123,7 +123,7 @@ According to [\cite{JMLR:v16:garcia15a}], there exist two main trends for Safe \
 \begin{itemize}
 	\item \emph{Worst Case Criterion}: a policy is considered to be optimal if it has the maximum return \wrt the worst-case scenario, namely the worst possible trajectory in terms of return:
 	\begin{align}
-	\max_{\pi \in \Pi}\min_{h \in H^{\pi}} \EV_{\pi, w}[G_{0}],
+	\max_{\pi \in \Pi}\min_{h \in H^{\pi}} \EV_{\pi, h}[G_{0}],
 	\end{align}
 	where $H^{\pi}$ is a set of trajectories that occurs under the policy $\pi$ and the quantity to maximize-minimize is an expected value \wrt the policy $\pi$ and the trajectory $h$ [\cite{Heger1994ConsiderationOR}]. This criterion is used to mitigate the effects of variability induced by a given policy. It is also possible to use this kind of criterion when the transition function $P$ is uncertain:
 	\begin{align}
