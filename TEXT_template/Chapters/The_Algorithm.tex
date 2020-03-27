@@ -49,7 +49,7 @@ This completes the definition of our abstract \ac{MDP}, called $\delta$-MDP in t
 %
 \noindent An initial-state distribution for the $\delta$-\ac{MDP} can be defined as $\wt{p}_0(X) = \int_{X}p_0(s)\de s\quad\forall X\in\Xspace$, where $p_0$ is the initial-state distribution for the original \ac{MDP}.
 %
-A (stationary\footnote{The policy does not changes over time}, Markovian) abstract policy $\rho: \Xspace \to \Delta(\Aspace)$ is a (possibly stochastic) mapping from abstract states to actions. In order not to confuse them with concrete policies $\pi$, we denote them with the letter $\rho$. Fixed the abstract \ac{MDP}, we can define value functions $V^{\rho}$ and $Q^{\rho}$, future-state distribution $\delta^{\rho}$ (over $\Xspace$) and optimal policy $\rho^{*}$, as in any \ac{MDP}. Note that there is no direct correspondence, in general, between concrete and abstract policies, since the behavior of a concrete policy may appear non-Markovian in the abstract \ac{MDP}~\citep{lihong2006towards}.
+A (stationary\footnote{The policy does not changes over time.}, Markovian) abstract policy $\rho: \Xspace \to \Delta(\Aspace)$ is a (possibly stochastic) mapping from abstract states to actions. In order not to confuse them with concrete policies $\pi$, we denote them with the letter $\rho$. Fixed the abstract \ac{MDP}, we can define value functions $V^{\rho}$ and $Q^{\rho}$, future-state distribution $\delta^{\rho}$ (over $\Xspace$) and optimal policy $\rho^{*}$, as in any \ac{MDP}. Note that there is no direct correspondence, in general, between concrete and abstract policies, since the behavior of a concrete policy may appear non-Markovian in the abstract \ac{MDP}~\citep{lihong2006towards}.
 However, we introduce a simple "concretization" operator $\Conc: \rho \mapsto \pi$ from abstract policies to concrete policies, defined as
 %\begin{align}
 $(\Conc\rho)(s) = \rho(\Gamma(s))$
@@ -142,9 +142,9 @@ where~\eqref{p:23} is from the triangle inequality and~\eqref{p:22} is from Assu
 \newline
 Under additional assumptions, such as the linearity of the transition function $f(s,a)$, we can obtain constants lower than one or even equal to zero. The latter happens when the state difference depends only on the action, which can be realistic, or at least a good approximation, for some continuous control problems. We discuss these different settings and provide detailed computations of the Lipschitz constants in \mySec{sec:absmdp}.
 %
-When $L_{\Delta}=0$, we can easily generate extra "fictitious" samples. For instance, given sample $(s,a,s')$, we can generate $(\wt{s},a,\wt{s}')$ for any other state $\wt{s}\in\Sspace$ by setting $\wt{s}' = \wt{s} + (s'-s)$. \hl{Indeed, from the inequality in} (\ref{p:18}) \hl{and considering $L_{\Delta}=0$, we obtain $\Delta(s,a)=\Delta(\wt{s},a)$.} In this way, for each action $a$ performed by policy $\pi_{\vtheta}$ in abstract state $X$, we can have several (fictitious) samples (one for each visited state $s\in X$). With these samples, we can simply estimate $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the next states that fall into $X'$ when we consider samples and fictitious samples involving any state $s \in X$ and the action $a$. \hl{To be more precise, given a batch $B^{*}$ of samples collected with $\pi_{\vtheta}$ and fictitious samples, the abstract transition function $\wt{P}_{\vtheta}$ is estimated as:}
+When $L_{\Delta}=0$, we can easily generate extra "fictitious" samples. For instance, given sample $(s,a,s')$, we can generate $(\wt{s},a,\wt{s}')$ for any other state $\wt{s}\in\Sspace$ by setting $\wt{s}' = \wt{s} + (s'-s)$. \hl{Indeed, from the inequality in} (\ref{p:18}) \hl{and considering $L_{\Delta}=0$, we obtain $\Delta(s,a)=\Delta(\wt{s},a)$.} In this way, for each action $a$ performed by policy $\pi_{\vtheta}$ in abstract state $X$, we can have several (fictitious) samples (one for each visited state $s\in X$). With these samples, we can simply estimate $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the next states that fall into $X'$ when we consider samples and fictitious samples involving any state $s \in X$ and the action $a$. \hl{To be more precise, given a batch $\Dataset$ of samples collected with $\pi_{\vtheta}$ and fictitious samples, the abstract transition function $\wt{P}_{\vtheta}$ is estimated as:}
 \begin{align}
-	\wt{P}_{\vtheta}(X'|X,a) = \frac{|(s,a,s') \in B^{*}: s \in X, s' \in X'|}{|(s,a,s') \in B^{*}: s \in X|}.
+	\wt{P}_{\vtheta}(X'|X,a) = \frac{\big|(s,a,s') \in \Dataset: s \in X, s' \in X'\big|}{\big|(s,a,s') \in \Dataset: s \in X\big|}.
 \end{align}
 When $L_{\Delta}\neq 0$, we can still use~\eqref{eq:deltas} to get a region containing $\wt{s}'$.
 %\begin{align}
@@ -182,16 +182,16 @@ When the abstract optimal policy $\rho^{*}$ prescribes multiple optimal actions 
 The first term from~\eqref{eq:regress} is the \acf{RMSE} loss, weighted by the future state distribution $\delta^{\vtheta}$. For differentiable policies (including neural networks), this loss can be minimized via gradient descent from the samples collected with $\pi_{\vtheta}$. The second term from~\eqref{eq:regress} penalizes solutions that are too far from the current policy parameters and it can be used as a regularization term in the regression problem. In practice, the regularization coefficient $\lambda$ can be tuned as a meta-parameter. Note that, without this projection step, there would be no room for further policy improvement, as the next $\delta$-\ac{MDP} would have just one action per abstract state. The projection error actually allows the agent to evaluate new actions and visit new regions of the state space. 
 
 \section{Abstract Transition Function construction}\label{sec:absmdp}
-In this section, we provide additional details on the \hl{estimation} of the $\delta$-MDP outlined in Section~\ref{sec:mdpest} \hl{and used to exploit passive exploration and update the deterministic policy of the agent.} We \hl{describe} the \hl{different approaches that we propose to estimate} the abstract transition function $\wt{P}$, \hl{these approaches} depend on the nature of the environment considered in the task. \hl{We inspect environments with an increasing level of difficulty: in} \mySubsec{app:b1} \hl{we derive two Lipschitz constants that can be useful to estimate the arriving state in deterministic linear environments, in} \mySubsec{app:b2} \hl{we propose to estimate the $\delta$-}\ac{MDP} with a \ac{BMDP} \hl{when the environment is deterministic but non-linear, in} \mySubsec{sec:app2.3} \hl{we build a constrained optimization problem to ensure a property of $\wt{P}$ in the case the environment is stochastic, at last in} \mySubsec{subsec:app2.4} \hl{we present a specific task involving a stochastic environment.}
+In this section, we provide additional details on the \hl{estimation} of the $\delta$-\ac{MDP} outlined in Section~\ref{sec:mdpest} \hl{and used to exploit passive exploration and update the deterministic policy of the agent.} We \hl{describe} the \hl{different approaches that we propose to estimate} the abstract transition function $\wt{P}$, \hl{these approaches} depend on the nature of the environment considered in the task. \hl{We inspect environments with an increasing level of difficulty: in} \mySubsec{app:b1} \hl{we derive two Lipschitz constants that can be useful to estimate the arriving state in deterministic linear environments, in} \mySubsec{app:b2} \hl{we propose to estimate the $\delta$-}\ac{MDP} with a \ac{BMDP} \hl{when the environment is deterministic but non-linear, in} \mySubsec{sec:app2.3} \hl{we build a constrained optimization problem to ensure a property of $\wt{P}$ in the case the environment is stochastic.}
 
 \subsection{Deterministic linear environments}\label{app:b1}
-\noindent We call \textit{linear} a deterministic environment in which $f(s, a)$ is linear \wrt the input variables $s$ and $a$. For these environments, we can write $f(s,a) = As + Ba$, where $A$ and $B$ are (possibly unknown) constant matrices. With $f(s,a)$ defined in this way, we can obtain a Lipschitz constant for $\Delta$ possibly smaller than the one derived in (\ref{p:18}):
+\noindent We call \textit{linear} a deterministic environment in which $f(s, a)$ is linear \wrt the input variables $s$ and $a$. For these environments, we can write $f(s,a) = As + Ba$, where $A$ and $B$ are (possibly unknown \hl{and then estimated}) constant matrices. With $f(s,a)$ defined in this way, we can obtain a Lipschitz constant for $\Delta$ possibly smaller than the one derived in (\ref{p:18}):
 \begin{align}
 \norm{\Delta(s,a)-\Delta(\wt{s},a)} &= \norm{As+Ba-s - \left(A\wt{s}+Ba-\wt{s}\right)} \nonumber \\
-&= L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta}=\norm{A-\mathbb{I}}, \label{p:20}
+&\leq L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta}=\norm{A-\mathbb{I}}, \label{p:20}
 \end{align}
-\hl{where $\norm{A-\mathbb{I}}$ is the infinity matrix norm of $A-\mathbb{I}$.}
-In general, the constant obtained in~\eqref{p:20} can be smaller than $\left(1 + L_{P}\right)$ and even equal to zero. When $\Delta(s,a)$ depends only on the performed action $a$ and not on the starting state $s$,  $A=\mathbb{I}$ and $L_{\Delta}=0$. From~\eqref{p:18}, if we consider $L_{\Delta} = 0$ instead of $L_{\Delta} = \left(1 + L_{P}\right)$, we obtain the equality $\Delta(s,a) = \Delta(\wt{s}, a)$ that allows to exactly predict the arriving state $\wt{s'}=f(\wt{s}, a)$ as $\wt{s'} = \wt{s} + \Delta(s,a)$.\\
+\hl{where $\norm{A-\mathbb{I}}$ is the matrix norm of $A-\mathbb{I}$.}
+In general, the constant obtained in~\eqref{p:20} can be smaller than $\left(1 + L_{P}\right)$ and even equal to zero. When $\Delta(s,a)$ depends only on the performed action $a$ and not on the starting state $s$,  $A=\mathbb{I}$ and $L_{\Delta}=0$. From~\eqref{p:18}, if we consider $L_{\Delta} = 0$ instead of $L_{\Delta} = \left(1 + L_{P}\right)$, we obtain the equality $\Delta(s,a) = \Delta(\wt{s}, a)$ that allows to exactly predict the arriving state $\wt{s'}=f(\wt{s}, a)$ \hl{for an un-sampled pair$(\wt{s}, a)$} as $\wt{s'} = \wt{s} + \Delta(s,a)$, \hl{from a sampled pair $(s,a)$.}\\
 \newline
 Unfortunately, when $L_{\Delta} \neq 0$ we cannot generate "fictitious" samples exactly. However, we exploit the inequality in~\eqref{p:18} to obtain an interval (or a higher-dimensional region) including the unknown $\wt{s'}=f(\wt{s},a)$, instead of the exact point $\wt{s'}$. Here we show how to obtain the interval in the simple case of one-dimensional states:
 \begin{align}
@@ -203,31 +203,47 @@ Unfortunately, when $L_{\Delta} \neq 0$ we cannot generate "fictitious" samples 
 \end{align}
 From~\eqref{p:19} we derive:
 \begin{align}
-	\wt{s'}=f(\wt{s}, a) \in \Big[\wt{s} + \Delta(s,a) - L_{\Delta} \left|s - \wt{s}\right|, \quad \wt{s} + \Delta(s,a) + L_{\Delta} \left|s - \wt{s}\right|\Big],
+	\wt{s'}=f(\wt{s}, a) \in \Big[\wt{s} + \Delta(s,a) - L_{\Delta} \left|s - \wt{s}\right|; \quad \wt{s} + \Delta(s,a) + L_{\Delta} \left|s - \wt{s}\right|\Big],
 \end{align}
-where $L_{\Delta} = \norm{A - \mathbb{I}}$.
-When the state space is $n-$dimensional with $n\geq 2$, the interval that we estimate is an hyperrectangle.\\
-%Each side of this hyperrectangle represents a mono-dimensional interval that includes the $i-th$ dimension of the state $\wt{s'}$, where $i \in \left[0, n-1\right]$.\\
+where $L_{\Delta} = |A - 1|$, \hl{where $A$ is a scalar and $|\cdot|$ the absolute value operator}.
+When the state space is $N-$dimensional with $N\geq 2$, the interval that we estimate is an hyperrectangle. \hl{For each dimension $i \in [1;N]$, we derive the $i-th$ bound of the hyperrectangle as:}
+\begin{align}
+	\wt{s'}_{i} \in \Big[\wt{s}_{i} + \Delta(s,a)_{i} - L_{\Delta} \norm{s - \wt{s}}; \quad \wt{s}_{i} + \Delta(s,a)_{i} + L_{\Delta} \norm{s - \wt{s}}\Big],
+\end{align}
+\hl{where the subscript $i$ refers to the $i-th$ dimension of the state and $L_{\Delta}$ is from} (\ref{p:20}). \hl{If we have high confidence on the matrix A, we can reason on the inequality derived below:}
+\begin{align}
+	\big(\Delta(s,a)-\Delta(\wt{s},a)\big)_{i} &= (A-\mathbb{I})_{i} \cdot (s-\wt{s}) \nonumber\\
+	&\leq \big| (A-\mathbb{I})_{i} \cdot (s - \wt{s})\big|,
+\end{align}
+\hl{where $(A-\mathbb{I})_{i}$ is the $i-th$ row of the matrix $(A-\mathbb{I})$ and $\cdot$ is the scalar product between vectors. We can derive a tigther bound for each dimension of the state $\wt{s'}$ similarly to} (\ref{p:19}):
+\begin{align}
+	\wt{s'}_{i} \in \Big[\wt{s}_{i} + \Delta(s,a)_{i} - bound; \quad \wt{s}_{i} + \Delta(s,a)_{i} + bound \Big],
+\end{align}
+\hl{where $bound = \big| (A-\mathbb{I})_{i} \cdot (s - \wt{s})\big|$}.\\
 \newline
-In tasks where a lot of precision is required in order to estimate $\wt{s'}$, the computed intervals could be not tight enough to represent $\wt{s'}$ with the required accuracy. We can increase the precision by computing a second interval on each $\wt{s'}$ and considering the intersection of the two intervals on $\wt{s'}$ as the most precise estimate. The second interval is calculated by considering two state-action pairs having the \emph{same} state and different \emph{actions}:
+In tasks where a lot of precision is required in order to estimate $\wt{s'}$, the computed intervals could be not tight enough to represent $\wt{s'}$ with the required accuracy. We can increase the precision by computing a second interval on $\wt{s'}$ and considering the intersection of the two intervals on $\wt{s'}$ as the most precise estimate. The second interval is calculated by considering two state-action pairs having the \emph{same} state and different \emph{actions}\hl{: the sampled pair $(\wt{s},\wt{a})$ and the un-sampled pair $(\wt{s},a)$.}
 \begin{align}
 \norm{\Delta(\wt{s},a) - \Delta(\wt{s}, \wt{a})} &= \norm{A\wt{s}+Ba-\wt{s} - \left(A\wt{s}+B\wt{a}-\wt{s}\right)} \nonumber \\
-&= L_{\Delta(a)} \norm{a-\wt{a}} \qquad \text{ with } L_{\Delta(a)}=\norm{B}. \label{p:21}
+&\leq L_{\Delta(a)} \norm{a-\wt{a}} \qquad \text{ with } L_{\Delta(a)}=\norm{B}. \label{p:21}
 \end{align}
-Similarly to~\eqref{p:19}, we obtain the new interval containing $\wt{s'} = f(\wt{s}, a)$:
+Similarly to~\eqref{p:19}, we obtain the new interval containing $\wt{s'} = f(\wt{s}, a)$ \hl{in the case of one-dimensional states:}
 \begin{align}
-\wt{s'} \in \Big[\wt{s} + \Delta(\wt{s},\wt{a}) - L_{\Delta (a)}\norm{a - \wt{a}}, \quad \wt{s} + \Delta(\wt{s},\wt{a}) + L_{\Delta (a)}\norm{a - \wt{a}} \Big],\label{p:25}
+\wt{s'} \in \Big[\wt{s} + \Delta(\wt{s},\wt{a}) - L_{\Delta (a)}\norm{a - \wt{a}}; \quad \wt{s} + \Delta(\wt{s},\wt{a}) + L_{\Delta (a)}\norm{a - \wt{a}} \Big],\label{p:25}
 \end{align}
-with $L_{\Delta (a)}$ = $\norm{B}$.\\
+with $L_{\Delta (a)}$ = $\norm{B}$. \hl{For the N-dimensional case, we can apply the same reasoning used previously.}\\
 \newline
 Hence, given (real) samples $(s_1,a_1,s_1')$ and $(s_2, a_2, s_2')$, we can generate fictitious next states for both $(s_1,a_2)$ and $(s_2,a_1)$, intersecting two intervals for each of them.
 
 \subsection{Deterministic non-linear environments} \label{app:b2}
 %If the environment is non-linear, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$ or we can estimate a smaller $L_{\Delta}$ from the samples and use it to compute the intervals on $\wt{s'}$ in the same way we showed for linear environments. Even if we can no longer consider $f(s,a)$ as a linear function in $s$ and $a$, the environment still satisfies the Lipschitz properties of regularity. If the constants $L_{\Delta}$ estimated from the samples are smaller than the real one, the intersection of two estimated intervals related to some $\wt{s'}$ can be empty. When it happens, we simply discard the intervals and do not generate the fictitious sample.
-When the (deterministic) transition function is non-linear, we are not able to exactly predict the next state of non-sampled state-action pairs. However, we can still exploit the Lipschitz assumptions to obtain upper and lower bounds (or multi-dimensional regions) for the next-states. To do so, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$, as shown in~\eqref{p:18} for general deterministic transitions, or we can estimate a smaller $L_{\Delta}$ from data.
-The result is a \emph{bounded-parameter} abstract \ac{MDP} (see \mySubsec{subsec:bmdp} for details) instead of a regular one.\\
+When the (deterministic) transition function is non-linear, we are not able to exactly predict the next state of un-sampled state-action pairs. However, we can still exploit the Lipschitz assumptions to obtain upper and lower bounds (or multi-dimensional regions) for the next-states. To do so, we can consider $L_{\Delta} = \left(1 + L_{P} \right)$, as shown in~\eqref{p:18} for general deterministic transitions, or we can estimate a smaller $L_{\Delta}$ from data.
+The result is an abstract \ac{BMDP} (see \mySubsec{subsec:bmdp} for details) instead of a regular one.\\
 \newline
-If we have $L_{\Delta} \neq 0$ and we estimate with~\eqref{p:18} the fictitious arriving state $\wt{s'} = f(\wt{s}, a)$, where $(\wt{s},a)$ is an unseen state-action pair, we obtain a region including $\wt{s'}$ instead of the exact point $\wt{s'}$. The information provided by the estimation of the fictitious arriving states is not sufficient to compute an exact $\wt{P}_{\vtheta}(X'|X,a)$ for each abstract state-action pair $(X,a)$ of the $\delta$-\ac{MDP}. The value of each $\wt{P}_{\vtheta}(X'|X,a)$ is a range of probabilities, whose lower and upper bounds are computed by evaluating all the estimated intervals related to some $\wt{s'}=f(\wt{s}, a)$, where $\wt{s} \in X$. The intervals estimated for fictitious arriving states can be entirely contained in a single abstract state $X' \in \Xspace$ or they can overlay multiple abstract states of $\Xspace$. We estimate the lower bound of $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the intervals entirely contained into $X'$ and the upper bound of $\wt{P}_{\vtheta}(X'|X,a)$ as the ratio of the intervals that overlay $X'$. Once we have $\wt{P}_{\vtheta}(X'|X,a)$, we can build the $\delta$-\ac{MDP} as a \ac{BMDP}. According to ~\citep{givan2000bounded}, the \ac{BMDP} can be solved following an optimistic or a pessimistic criterion. Motivated by risk-aversion, we choose the second one, so as to obtain the solution of the exact \ac{MDP} whose transition function is the $\wt{P}_{\vtheta}(X'|X,a)$ that maximizes the probability of transitioning to the abstract states with the lowest value function.
+If we have $L_{\Delta} \neq 0$ and we estimate with~\eqref{p:18} the fictitious arriving state $\wt{s'} = f(\wt{s}, a)$, where $(\wt{s},a)$ is an unseen state-action pair, we obtain a region including $\wt{s'}$ instead of the exact point $\wt{s'}$. The information provided by the estimation of the fictitious arriving states is not sufficient to compute an exact $\wt{P}_{\vtheta}(X'|X,a)$ for each abstract state-action pair $(X,a)$ of the $\delta$-\ac{MDP}. The value of each $\wt{P}_{\vtheta}(X'|X,a)$ is a range of probabilities, whose lower and upper bounds are computed by evaluating all the estimated intervals related to some $\wt{s'}=f(\wt{s}, a)$, where $\wt{s} \in X$. The intervals estimated for fictitious arriving states can be entirely contained in a single abstract state $X' \in \Xspace$ or they can overlay multiple abstract states of $\Xspace$. We estimate the lower bound $\underline{\wt{P}}_{\vtheta}(X'|X,a)$ as the ratio of the intervals entirely contained into $X'$ and the upper bound $\overline{\wt{P}}_{\vtheta}(X'|X,a)$ as the ratio of the intervals that overlay $X'$. \hl{To be more precise, given a batch $\Dataset$ of samples collected with $\pi_{\vtheta}$ and fictitious samples $(s,\wt{a},{X'}_{\updownarrow})$, with ${X'}_{\updownarrow}$ representing the possible arriving abstract states $X'$ according to the collected samples or the estimation, the bounds of the abstract transition function $\wt{P}_{\updownarrow, \vtheta}$ are estimated as:}
+\begin{align}
+\underline{\wt{P}}_{\vtheta}(X'|X,a) = \frac{\big|(s,a,{X'}_{\updownarrow}) \in \Dataset: s \in X, {X'}_{\updownarrow}=\{X'\}\big|}{\big|(s,a,{X'}_{\updownarrow}) \in \Dataset: s \in X\big|},\\
+\overline{\wt{P}}_{\vtheta}(X'|X,a) = \frac{\big|(s,a,{X'}_{\updownarrow}) \in \Dataset: s \in X, X' \in {X'}_{\updownarrow}\big|}{\big|(s,a,{X'}_{\updownarrow}) \in \Dataset: s \in X\big|}.
+\end{align}Once we have $\wt{P}_{\updownarrow, \vtheta}(X'|X,a)$, we can build the $\delta$-\ac{MDP} as a \ac{BMDP}. According to [\cite{givan2000bounded}], the \ac{BMDP} can be solved following an optimistic or a pessimistic criterion. Motivated by risk-aversion, we choose the second one, so as to obtain the solution of the exact \ac{MDP} whose transition function is the $\wt{P}_{\vtheta}(X'|X,a)$ that maximizes the probability of transitioning to the abstract states with the lowest value function.
 
 \subsection{Stochastic environments}\label{sec:app2.3}
 %When we estimate the arriving state $\wt{s'}$ resulting from an unsampled pair $(\wt{s},a)$, we exploit the information provided by some $(s,a)$ pairs sampled from a deterministic environment. 
@@ -277,12 +293,4 @@ We then add additional constraints that enforce in our estimate of $\wt{P}$ the 
 \end{align}
 %
 This is still a convex program and can be solved with standard optimization tools.
-In many cases, we can still generate fictitious samples as in the deterministic setting (see \mySubsec{subsec:app2.4}). These are simply added to the dataset $\Dataset$. 
-
-\subsection{Linear-Quadratic Gaussian Regulator}\label{subsec:app2.4}
-The Double Integrator task presented in Section~\ref{sec:mass} is a special case of Linear-Quadratic Gaussian Regulator~[\cite{peters2002policy}]. This means the transition function is linear plus an additive zero-mean Gaussian noise.
-Since this kind of environment is stochastic, we adopt the constrained maximum-likelihood approach presented in~\ref{sec:app2.3}. 
-However, we can exploit the underlying linearity of the system to generate fictitious samples.
-For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed from the equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. 
-In Double Integrator, the Gaussian noise is added to each dimension of the state independently from the other one. 
-In this case, we can define a separate constraint~\eqref{p:26} for each of the two dimensions of the state space, for increased precision, possibly with a different constant $L_{\wt{P}}$ for each dimension. \todo{conviene esplicitare i constraints di questo caso particolare, che riguardano le sommatorie delle probabilità rispetto a ogni dimensione dello state space?}
+In many cases, we can still generate fictitious samples as in the deterministic setting (see \mySec{sec:mass}). These are simply added to the dataset $\Dataset$. 
