@@ -8,7 +8,7 @@ Most of the algorithms in \ac{PS} learn the parameterized policy $\pi_{\vtheta}$
 \end{align}
 where $\widehat{\nabla}J(\vtheta) \in \mathbb{R}^d$ is a stochastic estimate whose expectation approximates the gradient of the performance measure with respect to its argument $\vtheta$ and $\alpha>0$ is the step size, a scalar that controls the size of each update and can change through time. In \ac{PG} methods, the policy $\pi(a|s,\vtheta)$ has to be differentiable with respect to its parameters $\vtheta \in \mathbb{R}^d \quad \forall s \in \Sspace, \forall a \in \Aspace$.\\
 \newline
-With appropriate policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas for greedy policies the action probabilities may change enormously for a small change in the estimated action values. Stronger convergence guarantees are available for policy-gradient methods and approximate gradient ascent can be performed as in \myEq{eq:grad}. According to [\cite{peters2010pg}], if the gradient estimate is unbiased\footnote{In [\cite{williams1992simple}] it is proved that an unbiased estimate of the gradient can be obtained from samples without the assistance of approximate functions.} and learning rates fulfill the following conditions:
+\sloppy With appropriate policy parametrization the action probabilities change smoothly as a function of the learned parameter, whereas for greedy policies the action probabilities may change enormously for a small change in the estimated action values. Stronger convergence guarantees are available for policy-gradient methods and approximate gradient ascent can be performed as in \myEq{eq:grad}. According to [\cite{peters2010pg}], if the gradient estimate is unbiased\footnote{In [\cite{williams1992simple}] it is proved that an unbiased estimate of the gradient can be obtained from samples without the assistance of approximate functions.} and learning rates fulfill the following conditions:
 \begin{align}\sum_{t=1}^{\infty}\alpha_t = \infty \quad \sum_{t=1}^{\infty}\alpha_t^2 < \infty\end{align}
 the learning process is guaranteed to converge to at least a local optimum.\\
 \newline
@@ -47,17 +47,17 @@ where $\langle \cdot \rangle_{N}$ denotes the average of the inner expression ov
 \newline
 REINFORCE has good theoretical convergence properties: by construction, an improvement in expected performance and convergence to a local optimum under standard stochastic approximation conditions are ensured [\cite{sutton2018reinforcement}]. However, it presents an high variance that slows the convergence process. In order to mitigate this problem, we consider \emph{baseline functions} $b: \Sspace \to \mathbb{R}$, \ie functions that don't depend on the action and can reduce variance in the estimate without introducing bias.
 Indeed, we observe that if $b(s)$ does not depend on $a$ we can modify~\eqref{eq:pgt} in the following way:
-\begin{align} \nabla_{\vtheta}J(\vtheta) = \int_s \delta^{\vtheta}(s) \int_a \nabla_{\vtheta} \pi(a|s) \Big( Q^{\vtheta}(s,a) -b(s) \Big) \de a \de s. \label{eq:pgtbase}\end{align}
+\begin{align} \nabla_{\vtheta}J(\vtheta) = \int_s \delta^{\vtheta}(s) \int_a \nabla_{\vtheta} \pi_{\vtheta}(a|s) \Big( Q^{\vtheta}(s,a) -b(s) \Big) \de a \de s. \label{eq:pgtbase}\end{align}
 The new term appearing in~\eqref{eq:pgtbase} doesn't affect the value of gradient:
-\begin{align} \int_a b(s) \nabla_{\vtheta} \pi(a|s) \de a = b(s) \nabla_{\vtheta} \int_a \pi(a|s) \de a = b(s) \nabla_{\vtheta} 1 = 0. \end{align}
+\begin{align} \int_a b(s) \nabla_{\vtheta} \pi_{\vtheta}(a|s) \de a = b(s) \nabla_{\vtheta} \int_a \pi_{\vtheta}(a|s) \de a = b(s) \nabla_{\vtheta} 1 = 0. \end{align}
 An intuitive baseline $b(s)$ that can be used is the value function $V^{\vtheta}(s)$. In some tasks, $Q^{\vtheta}(s,a)$ can assume high values and the use of $V^{\vtheta}(s)$ as baseline provides an effect of normalization. The difference in expression~\eqref{eq:pgtbase} becomes the advantage function $A^{\vtheta}(s,a)$ when $V$ is used as a baseline:
-\begin{align} \nabla_{\vtheta}J(\vtheta) = \int_s \delta^{\vtheta}(s) \int_a \nabla_{\vtheta} \pi(a|s) \Big( Q^{\vtheta}(s,a) - V^{\vtheta}(s) \Big) \de a \de s.\end{align}
+\begin{align} \nabla_{\vtheta}J(\vtheta) = \int_s \delta^{\vtheta}(s) \int_a \nabla_{\vtheta} \pi_{\vtheta}(a|s) \Big( Q^{\vtheta}(s,a) - V^{\vtheta}(s) \Big) \de a \de s.\end{align}
 In [\cite{Peters2008ReinforcementLO}] a different formulation for the estimation of gradient is provided. It is used in the \emph{GPOMDP} algorithm and reduces variance in the estimation of gradient because it prevents to sum, for each time-step, the rewards obtained from the current time-step until the end of the episode:
 \begin{align}
 \widehat{\nabla}_{\vtheta}^{GPOMDP}J(\vtheta) &= \Big\langle \sum_{l=0}^{T-1} \Big( \sum_{k=0}^{l} \nabla_{\vtheta}\log\pi_{\vtheta}(a_k|s_k)\Big)\Big(\gamma^{l}r_{l+1} - b_{l} \Big)  \Big\rangle_{N}.
 \end{align}
 Apart from the baseline $b_l$, this expression is equivalent to (\ref{eq:estrein}). In this work, we consider the GPOMDP estimation of gradient with the variance-minimizing baseline provided by [\cite{Peters2008ReinforcementLO}]:
-\begin{align} b_l = \frac{\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{}(a_k|s_k)\Big)^2 \gamma^{l}r_{l+1}\Big\rangle_{N}} {\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi^{\vtheta}(a_k|s_k)\Big)^2\Big\rangle_{N}},
+\begin{align} b_l = \frac{\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi_{\vtheta}(a_k|s_k)\Big)^2 \gamma^{l}r_{l+1}\Big\rangle_{N}} {\Big\langle\Big( \sum_{k=0}^{l}\nabla_{\vtheta} \log\pi_{\vtheta}(a_k|s_k)\Big)^2\Big\rangle_{N}},
 \end{align}
 where the square operation is performed in an element-wise manner on the vector.
 This is one of the most common policy gradient algorithms and we use it in this work to compare our algorithm with a standard algorithm in policy search.
