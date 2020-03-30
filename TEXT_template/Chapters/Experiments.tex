@@ -20,13 +20,13 @@ s'=f(s,a) = s - at + 0.5 \times dt^2,
 where $t=\frac{a}{d}$ and $d = \frac{5}{7} \times friction(s) \times 9.81$.
 Friction is computed as:
 \[
-friction(s) = friction\_low + \frac{friction\_high - friction\_low}{s_{max} - s_{min}} \times s
+frict(s) = friction\_low + \frac{friction\_high - friction\_low}{s_{max} - s_{min}} \times s
 \]
 where $friction\_low=0.131$, $friction\_high=0.19$, $s_{max}=20$ and $s_{min}=0$. The Lipschitz constant $L_{\Delta}$ of the environment is computed as follows:\\
 \begin{align}
 \Delta(s,a) = -0.5 \times \frac{a^2}{d(s)}; &\quad friction(s) = 0.131 + 2.95 \times 10^{-3} \times s, \nonumber\\
-\norm{\Delta(s,a) - \Delta(\wt{s},a)} &= \norm{ -0.5 \times a^2 \Big(\frac{1}{7 \times friction(s)} - \frac{1}{7 \times friction(\wt{s})} \Big)} \nonumber\\
-&= \norm{-0.0714 \times a^2}\norm{\frac {2.95 \times 10^{-3} \times (\wt{s} -s)} {friction(s) \times friction(\wt{s})}}\label{p:31}\\
+\norm{\Delta(s,a) - \Delta(\wt{s},a)} &= \norm{ -0.5 \times a^2 \Big(\frac{1}{7 \times frict(s)} - \frac{1}{7 \times frict(\wt{s})} \Big)} \nonumber\\
+&= \norm{-0.0714 \times a^2}\norm{\frac {2.95 \times 10^{-3} \times (\wt{s} -s)} {frict(s) \times frict(\wt{s})}}\label{p:31}\\
 &= L_{\Delta} \norm{s - \wt{s}} \quad \text{ with }L_{\Delta}=0.3, \label{p:32}
 \end{align}
 where~\eqref{p:32} is obtained from~\eqref{p:31} considering the maximum possible value for actions and the minimum possible value for states, so as to maximize $L_{\Delta}$.
@@ -261,19 +261,34 @@ The results of the final experiments (averaged over multiple runs performed with
 We recap the final configurations in Table~\ref{tab:recap2} for the sake of reproducibility.
 
 \begin{table}[H]
-	\begin{tabular}{ll|ccccccccc}
+	\begin{tabular}{ll|ccccc}
 		\toprule
-		\textbf{Task} & \textbf{Alg} & $\alpha$ & $\lambda$ & $\sigma$ & $n$ & $m$ & $N$ & $H$ & \textbf{$\gamma$} & $|\Xspace|$\\
+		\textbf{Task} & \textbf{Alg} & $\alpha$ & $\lambda$ & $\sigma$ & $n$ & $m$\\
 		\midrule
-		Minigolf & DPO & $0.001$ & $0.0005$ & -- & $700$ & $10$ & $500$ & 20 & $0.99$ & $12$ \\
-		& REIN. & $0.05$ & -- & $e^{-2}$ & $700$ & $10$ & $500$ & 20 & $0.99$ & -- \\
-		& REIN.* & $0.005$ & -- & $e^{-3}$ & $700$ & $10$ & $500$ & 20 & $0.99$ & -- \\
+		Minigolf & DPO & $0.001$ & $0.0005$ & -- & $700$ & $10$ \\
+		& REINFORCE & $0.05$ & -- & $e^{-2}$ & $700$ & $10$ \\
+		& REINFORCE* & $0.005$ & -- & $e^{-3}$ & $700$ & $10$ \\
 		\midrule
-		Double Int. & DPO & $0.025$ & $0.0001$ & -- & $120$ & $5$ & $500$ & $20$ & $0.95$ & $\{3^{2},9^{2},13^{2}\}$ \\
-		& PGPE & $1$ & -- & $0.5$ & $120$ & $5$ & $500$ & $20$ & $0.95$ & -- \\
+		Double Integrator & DPO & $0.025$ & $0.0001$ & -- & $120$ & $5$ \\
+		& PGPE & $1$ & -- & $0.5$ & $120$ & $5$ \\
 		\midrule
-		Robot Ad. & DPO & $0.005$ & $0.05$ & -- & $100$ & $10$ & $10$ & $200$ & $1$ & $5^{9}$ \\
-		& PGPE & $1$ & -- & $0.5$ & $100$ & $10$ & $10$ & $200$ & $1$ & --\\
+		Robot Adaptation & DPO & $0.005$ & $0.05$ & -- & $100$ & $10$ \\
+		& PGPE & $1$ & -- & $0.5$ & $100$ & $10$ \\
+		\midrule
+	\end{tabular}
+	\begin{tabular}{ll|cccc}
+		\toprule
+		\textbf{Task} & \textbf{Alg} & $N$ & $H$ & \textbf{$\gamma$} & $|\Xspace|$\\
+		\midrule
+		Minigolf & DPO & $500$ & 20 & $0.99$ & $12$ \\
+		& REINFORCE & $500$ & 20 & $0.99$ & -- \\
+		& REINFORCE* & $500$ & 20 & $0.99$ & -- \\
+		\midrule
+		Double Integrator & DPO & $500$ & $20$ & $0.95$ & $\{3^{2},9^{2},13^{2}\}$ \\
+		& PGPE & $500$ & $20$ & $0.95$ & -- \\
+		\midrule
+		Robot Adaptation & DPO & $10$ & $200$ & $1$ & $5^{9}$ \\
+		& PGPE & $10$ & $200$ & $1$ & --\\
 		\midrule
 	\end{tabular}
 	\caption{\label{tab:recap2}Configurations used for hyper-parameter tuning, including hyper-parameters $\alpha$, $\lambda$ and $\sigma$. We denote with $n$ the number of iterations (policy updates), with $m$ the number of independent runs, with $N$ the batch size, with $H$ the task horizon, with $\gamma$ the discount factor and with $|\Xspace|$ the number of abstract states.}

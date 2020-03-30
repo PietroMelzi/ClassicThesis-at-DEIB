@@ -98,7 +98,7 @@ More details on how the abstract state space $\Xspace$ is built \hl{in the exper
 
 %\subsection{$\delta$-MDP Estimation}
 \subsection{Abstract MDP estimation}\label{sec:mdpest}
-A fundamental aspect in the creation of the $\delta$-\ac{MDP} is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\vtheta}(s)$\hl{, which we avoid to explicitly perform because it would require too many samples to obtain an accurate estimation.} \todo{specificare infinite examples to cover the state space? oppure basta un numero finito di samples, seppur alto per avere una stima accurata?}
+A fundamental aspect in the creation of the $\delta$-\ac{MDP} is the estimation of the $\gamma$-discounted future-state distribution $\delta^{\vtheta}(s)$\hl{, which we avoid to explicitly perform because it would require too many samples to obtain an accurate estimation.}
 To construct the $\delta^{\vtheta}$-\ac{MDP}, given the current policy $\pi_{\vtheta}$, we need to estimate the abstract reward function $\wt{R}_{\vtheta}$ and the abstract transition function $\wt{P}_{\vtheta}$. As we previously said, the weighting function $w(s)$ that weighs the abstract functions $\wt{R}_{\vtheta}(X, a)$ and $\wt{P}_{\vtheta}(X'|X, a)$ of the $\delta$-\ac{MDP} is defined according to $\delta^{\vtheta}(s)$. The exact computation of the abstract functions would require knowledge of the future state distribution $\delta^{\vtheta}$, which is out of reach. 
 However, we can write the abstract functions as expected values:
 \begin{align}
@@ -190,7 +190,7 @@ In this section, we provide additional details on the \hl{estimation} of the $\d
 \norm{\Delta(s,a)-\Delta(\wt{s},a)} &= \norm{As+Ba-s - \left(A\wt{s}+Ba-\wt{s}\right)} \nonumber \\
 &\leq L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta}=\norm{A-\mathbb{I}}, \label{p:20}
 \end{align}
-\hl{where $\norm{A-\mathbb{I}}$ is the matrix norm of $A-\mathbb{I}$.}
+\hl{where $\norm{A-\mathbb{I}}$ is the induced matrix norm of $A-\mathbb{I}$ compatible with the vector norm considered. In the case the latter is the Euclidean norm, the induced matrix norm is the \emph{spectral norm.}}
 In general, the constant obtained in~\eqref{p:20} can be smaller than $\left(1 + L_{P}\right)$ and even equal to zero. When $\Delta(s,a)$ depends only on the performed action $a$ and not on the starting state $s$,  $A=\mathbb{I}$ and $L_{\Delta}=0$. From~\eqref{p:18}, if we consider $L_{\Delta} = 0$ instead of $L_{\Delta} = \left(1 + L_{P}\right)$, we obtain the equality $\Delta(s,a) = \Delta(\wt{s}, a)$ that allows to exactly predict the arriving state $\wt{s'}=f(\wt{s}, a)$ \hl{for an un-sampled pair$(\wt{s}, a)$} as $\wt{s'} = \wt{s} + \Delta(s,a)$, \hl{from a sampled pair $(s,a)$.}\\
 \newline
 Unfortunately, when $L_{\Delta} \neq 0$ we cannot generate "fictitious" samples exactly. However, we exploit the inequality in~\eqref{p:18} to obtain an interval (or a higher-dimensional region) including the unknown $\wt{s'}=f(\wt{s},a)$, instead of the exact point $\wt{s'}$. Here we show how to obtain the interval in the simple case of one-dimensional states:
