@@ -90,7 +90,8 @@ In this section, we provide complete proofs for the formal statements presented 
 	From Lemma~\ref{lem:adv1}:
 	\begin{align}
 	|A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(\wt{s},\pi_{\vtheta'}(\wt{s}))| 
-	&\leq L_{Q^{\vtheta}}\norm{\pi_{\vtheta'}(s) - \pi_{\vtheta'}(\wt{s})} + \left(L_{Q^{\vtheta}} + L_{V^{\vtheta}}\right)\norm{s-\wt{s}} \nonumber\\
+	&\leq L_{Q^{\vtheta}}\norm{\pi_{\vtheta'}(s) - \pi_{\vtheta'}(\wt{s})} + \nonumber\\
+	&\qquad+ \left(L_{Q^{\vtheta}} + L_{V^{\vtheta}}\right)\norm{s-\wt{s}} \nonumber\\
 	%
 	&\leq \left(L_{Q^{\vtheta}}(1 + L_{\pi_{\vtheta'}}) + L_{V^{\vtheta}}\right)\norm{s-\wt{s}},
 	\end{align}
@@ -104,32 +105,34 @@ In this section, we provide complete proofs for the formal statements presented 
 	J(\vtheta') - J(\vtheta) 
 	&=\frac{1}{1-\gamma} \int_{\Sspace}\delta^{\vtheta'}(s)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \nonumber \\
 	%
-	&= \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)A^{\vtheta}(s,\Conc\rho(s))\de s 
-	+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s
-	\nonumber\\&\qquad+
+	&= \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)A^{\vtheta}(s,\Conc\rho(s))\de s \nonumber\\
+	&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s)) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s
+	\nonumber\\
+	&\qquad+
 	\frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \nonumber\\		
 	%
-	&= \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
-	+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s 
-	\nonumber\\&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:2}\\
+	&= \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\left(A^{\vtheta}(s,\pi_{\vtheta'}(s) - A^{\vtheta}(s,\Conc\rho(s))\right)\de s
+	\nonumber\\
+	&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:2}\\
 	%
-	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
-	- \frac{1}{1-\gamma}L_{Q^{\vtheta}}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s
-	\nonumber\\&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:3}\\
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	&\qquad	- \frac{1}{1-\gamma}L_{Q^{\vtheta}}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s
+	\nonumber\\
+	&\qquad+ \frac{1}{1-\gamma}\int_{\Sspace}\left(\delta^{\vtheta'}(s) - \delta^{\vtheta}(s)\right)A^{\vtheta}(s,\pi_{\vtheta'}(s))\de s \label{p:3}\\
 	%
-	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
-	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s
-	\nonumber\\&\qquad-\frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \label{p:4}\\
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	&\qquad	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\int_{\Sspace}\delta^{\vtheta}(s)\norm{\pi_{\vtheta'}(s) - \Conc\rho(s)} \de s\nonumber\\
+	& \qquad- \frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \label{p:4}\\
 	%
 	&=  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
-	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)}
-	\nonumber\\&\qquad-\frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \nonumber\\
+	\nonumber\\ 
+	&\qquad - \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)} -\frac{L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\Kant\left(\delta^{\vtheta'},\delta^{\vtheta}\right) \nonumber\\
 	%
-	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s 
-	- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)}
-	\nonumber\\&\qquad-\frac{L_{\delta}L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\norm{\vtheta'-\vtheta},\nonumber
+	&\geq  \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	&\qquad - \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\pi_{\vtheta'}(s) - \Conc\rho(s)} -\frac{L_{\delta}L_{A^{\vtheta}_{\vtheta'}}}{1-\gamma}\norm{\vtheta'-\vtheta},\nonumber
 	\end{align}
-	where~\eqref{p:2} if from the fact that $\Xspace$ is a partition of $\Sspace$ and $\Conc\rho (s) = \rho(X)$ for all $s\in X$; \eqref{p:3} is from Lemma~\ref{lem:adv1} with $\wt{s}=s$, $a=\pi_{\vtheta'}(s)$ and $\wt{a}=\Conc\rho(s)$; \eqref{p:4} is from Lemma~\ref{lem:adv2} and the definition of the Kantorovich distance; and the last inequality is from Lemma~\ref{lem:lipfut}.
+	where~\eqref{p:2} is from the fact that $\Xspace$ is a partition of $\Sspace$ and $\Conc\rho (s) = \rho(X)$ for all $s\in X$; \eqref{p:3} is from Lemma~\ref{lem:adv1} with $\wt{s}=s$, $a=\pi_{\vtheta'}(s)$ and $\wt{a}=\Conc\rho(s)$; \eqref{p:4} is from Lemma~\ref{lem:adv2} and the definition of the Kantorovich distance; and the last inequality is from Lemma~\ref{lem:lipfut}.
 \end{proof}
 
 \noindent We now establish a relationship between the surrogate objective $W^{\rho}(X)$ and the value function of the current policy in the original \ac{MDP}:
@@ -146,12 +149,14 @@ In this section, we provide complete proofs for the formal statements presented 
 	|V^{\vtheta}(s) - W^{\rho}(X)| 
 	&= Z_{\vtheta}(X)^{-1}\left|\int_{X}\delta^{\vtheta}(s')\left(V^{\vtheta}(s) - Q^{\vtheta}(s',\rho(X))\right)\de s'\right| \label{p:5}\\
 	%
-	&= Z_{\vtheta}(X)^{-1}\left|\int_{X}\delta^{\vtheta}(s')\left(Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right)\de s'\right| \nonumber\\
+	&= Z_{\vtheta}(X)^{-1}\nonumber\\
+	&\qquad \left|\int_{X}\delta^{\vtheta}(s')\left(Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right)\de s'\right| \nonumber\\
 	%
-	&\leq Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \nonumber\\
+	&\leq Z_{\vtheta}(X)^{-1}\nonumber\\
+	&\qquad \int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \nonumber\\
 	%
-	&\leq \left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s,\rho(X))\right| + \nonumber\\ 
-	& + Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\rho(X)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \label{p:6}\\
+	&\leq \left|Q^{\vtheta}(s,\pi_{\vtheta}(s)) - Q^{\vtheta}(s,\rho(X))\right| + Z_{\vtheta}(X)^{-1} \nonumber\\ 
+	& \qquad \int_{X}\delta^{\vtheta}(s')\left|Q^{\vtheta}(s,\rho(X)) - Q^{\vtheta}(s',\rho(X))\right|\de s' \label{p:6}\\
 	%
 	&\leq L_{Q^{\vtheta}}D(\pi_{\vtheta}(X)) +  L_{Q^{\vtheta}}D(X) \label{p:7}\\
 	%
@@ -161,8 +166,10 @@ In this section, we provide complete proofs for the formal statements presented 
 	\end{align}
 	where~\eqref{p:5} is from the definition of $W^{\rho}(X)$; \eqref{p:6} is obtained by applying the triangular inequality after adding and subtracting $Q^{\vtheta}(s,\rho(X))$; \eqref{p:7} is from Lemma~\ref{lem:lipval} and the fact that both $\pi_{\vtheta}(s)$ and $\rho(X)$ belong to $\pi_{\vtheta}(X)$, and all the considered states belong to $X$; \eqref{p:8} if from Assumption~\ref{ass:lippol} since: 
 	\begin{align}
-	D(\pi_{\vtheta}(X)) &= \sup_{a,\wt{a}\in\pi_{\vtheta}(X)}\norm{a-\wt{a}} = \sup_{s,\wt{s}\in X}\norm{\pi_{\vtheta}(s)-\pi_{\vtheta}(\wt{s})} \leq \nonumber\\
-	&\leq L_{\pi_{\vtheta}}\sup_{s,\wt{s}\in X}\norm{s-\wt{s}} = L_{\pi_{\vtheta}}D(X);
+	D(\pi_{\vtheta}(X)) &= \sup_{a,\wt{a}\in\pi_{\vtheta}(X)}\norm{a-\wt{a}} \nonumber\\
+	&= \sup_{s,\wt{s}\in X}\norm{\pi_{\vtheta}(s)-\pi_{\vtheta}(\wt{s})} \nonumber\\
+	&\leq L_{\pi_{\vtheta}}\sup_{s,\wt{s}\in X}\norm{s-\wt{s}}\nonumber\\
+	& = L_{\pi_{\vtheta}}D(X);
 	\end{align} 
 	and~\eqref{p:9} is from the definition of $L_{V^{\vtheta}}$ in Lemma~\ref{lem:lipval}.
 \end{proof}
@@ -174,39 +181,42 @@ In this section, we provide complete proofs for the formal statements presented 
 	First, by Bellman's equation:
 	\begin{align}
 	W^{\rho}(X) 
-	=&  Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s \nonumber\\
+	&=  Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s \nonumber\\
 	%
-	=& Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)R(s,\rho(X))\de s
-	+ \gamma Z_{\vtheta}(X)^{-1} \nonumber\\
-	&\int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:10}\\
+	&= Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)R(s,\rho(X))\de s \nonumber\\
+	&\qquad + \gamma Z_{\vtheta}(X)^{-1} \int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:10}\\
 	%
-	=& \wt{R}_{\vtheta}(s,\rho(X))
-	+ \gamma Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:11}\\
+	&= \wt{R}_{\vtheta}(s,\rho(X)) \nonumber\\
+	& \qquad + \gamma Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{\Sspace}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s \label{p:11}\\
 	%
-	=& \wt{R}_{\vtheta}(s,\rho(X))
-	+ \gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s,\label{p:12}
+	&= \wt{R}_{\vtheta}(s,\rho(X)) \nonumber \\
+	&\qquad + \gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s,\label{p:12}
 	\end{align}
 	where~\eqref{p:10} is from Bellman's equation for $Q^{\vtheta}$, \eqref{p:11} is from the definition of $\wt{R}_{\vtheta}$, and \eqref{p:12} is from the fact that $\Xspace$ is a partition of $\Sspace$.
 	Hence:
 	\begin{align}
 	|W^{\rho}(X) - V^{\rho}(X)| 
-	&= \left|\gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
-	\right.\nonumber\\&\qquad\left. 
+	&= \left|\gamma \sum_{X'\in\Xspace} Z_{\vtheta}(X)^{-1}\right. \nonumber\\
+	&\qquad\left. \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
+	\right.\nonumber\\
+	&\qquad\left. 
 	- \gamma\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))V^{\rho}(X') \right| \label{p:13}\\
 	%
-	&= \gamma Z_{\vtheta}(X)^{-1}\left| \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
-	\right.\nonumber\\&\qquad\left. 
-	- \sum_{X'\in\Xspace}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\de s'\de sV^{\rho}(X') \right| \label{p:14}\\
+	&= \gamma Z_{\vtheta}(X)^{-1} \nonumber \\
+	&\qquad \left| \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))V^{\vtheta}(s')\de s'\de s 
+	\right.\nonumber\\
+	&\qquad\left. - \sum_{X'\in\Xspace}\int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\de s'\de sV^{\rho}(X') \right| \label{p:14}\\
 	%
-	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') - V^{\rho}(X')\right|\de s'\de s \nonumber\\
+	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') \right. \nonumber\\
+	&\qquad \left. - V^{\rho}(X')\right|\de s'\de s \nonumber\\
 	%
-	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') - W^{\rho}(X')\right|\de s'\de s 
-	\nonumber\\&\qquad + 
-	\gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right|\de s'\de s \label{p:15}\\
+	&\leq \gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\int_{X'}p(s'|s,\rho(X))\left|V^{\vtheta}(s') \right. \nonumber\\
+	& \qquad \left. - W^{\rho}(X')\right|\de s'\de s + 
+	\gamma Z_{\vtheta}(X)^{-1} \sum_{X'\in\Xspace} \int_{X}\delta^{\vtheta}(s)\nonumber \\
+	& \qquad \int_{X'}p(s'|s,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right|\de s'\de s \label{p:15}\\
 	%
-	&\leq \gamma L_{V^{\vtheta}}\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X')
-	\nonumber\\&\qquad + 
-	\gamma \sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right| \label{p:16}\\
+	&\leq \gamma L_{V^{\vtheta}}\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X')	\nonumber\\
+	&\qquad + \gamma \sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))\left|W^{\rho}(X') - V^{\rho}(X')\right| \label{p:16}\\
 	%
 	&\leq \frac{\gamma L_{V^{\vtheta}}\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X')}{1-\gamma} \label{p:17}\\
 	%
