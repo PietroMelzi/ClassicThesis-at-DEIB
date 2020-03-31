@@ -6,7 +6,7 @@ The overall goal that we consider in each iteration of the algorithm is the maxi
 From the following lower bound we obtain a justification, under Lipschitz assumptions, for the approach we propose in \ac{DPO}:
 %
 \begin{restatable}{theorem}{boundj}\label{lem:boundj}
-	For any deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$, state partition $\Xspace$ and deterministic abstract policy ${\rho:\Xspace\to\Aspace}$, let $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho)$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}:
+	For any deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$, state partition $\Xspace$ and deterministic abstract policy ${\rho:\Xspace\to\Aspace}$, let $\pi_{\vtheta'} = \Proj_{\Pi_{\Theta}}(\Conc\rho)$, where $\Proj_{\Pi_{\Theta}}$ is the projection operator that projects policies in the policy space ${\Pi_{\Theta}}$ and $\Conc$ is the "concretization" operator that converts abstract policies in concrete policies. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}:
 	\begin{align*}
 	&J(\vtheta') - J(\vtheta) \geq \frac{1}{1-\gamma}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s 
 	\nonumber\\&\qquad- \frac{L_{Q^{\vtheta}}}{1-\gamma}\norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
@@ -42,14 +42,14 @@ where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s
 	|W^{\rho}(X) - V^{\rho}(X)| \leq \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
 	%\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X'),
 	\end{align*}
-	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$, $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
+	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$ (\ie the set of actions performed in the abstract state $X$ according to $\pi_{\vtheta}$), $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
 \end{restatable}
 %
 \noindent An immediate consequence is that: 
 \begin{align}\label{eq:wstar}
 W^{\rho^*}(X) \geq V^{\rho^*}(X) - \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
 \end{align}
-\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-\ac{MDP} as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$, to our surrogate objective from Theorem~\ref{lem:boundj}.
+\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-\ac{MDP} as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$ alone(fixed the projection operator), to our surrogate objective from Theorem~\ref{lem:boundj}.
 %
 These theoretical bounds justify our definition of $\delta$-\ac{MDP} and how we use the optimal abstract policy to update the original parameters.\\
 \newline

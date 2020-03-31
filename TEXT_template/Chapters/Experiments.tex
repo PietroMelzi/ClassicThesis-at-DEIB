@@ -1,13 +1,13 @@
 \chapter{Experiments} \label{chap:exp}
-In this chapter, we test \ac{DPO} on simulated continuous control tasks. Details on task and policy definitions are provided for each experiment: in \mySec{sec:mini} for the \emph{Minigolf} experiment, in \mySec{sec:mass} for the \emph{Double Integrator} experiment and in \mySec{sec:safe} for the \emph{Robot Adaptation} experiment. In \mySec{sec:exp2} we provide details on how experiments were performed, we also report the results of the tuning phase (previous to the experiments) performed on some hyperparameters. Hyperparameters for all the algorithms are selected via grid search, for \ac{DPO} the regularization coefficient $\lambda$ and the projection step size $\alpha$ are tuned. Additional results that help to understand better the behaviour of \ac{DPO} are provided in \mySec{sec:exp3}.
+In this chapter, we test \ac{DPO} on simulated continuous control tasks. Details on task and policy definitions are provided for each experiment: in \mySec{sec:mini} for the \emph{Minigolf} experiment, in \mySec{sec:mass} for the \emph{Double Integrator} experiment and in \mySec{sec:safe} for the \emph{Robot Adaptation} experiment. In \mySec{sec:exp2} we provide details on how experiments were performed, we also report the results of the tuning phase (previous to the experiments) performed on some hyperparameters. Hyperparameters for all the algorithms are selected via grid search, for \ac{DPO} the regularization coefficient $\lambda$ and the projection step size $\alpha$ are tuned in this way. Additional results that help to better understand the behaviour of \ac{DPO} are provided in \mySec{sec:exp3}.
 
 \section{Minigolf}\label{sec:mini}
-We begin the experimental phase of this work with a one-dimensional task, adapted from~\citet{doro2019gradient}, where the agent has to throw a ball into a hole by hitting it with a putter as few times as possible. The policy is an \ac{RBF} network mapping the scalar state (the ball-hole distance) to the scalar action (the applied force). 
-The agent receives a reward of $-1$ for every intermediate hit, and is penalized hundredfold for overshooting. We refer to the latter event as a \textit{failure} in the following.
+We begin the experimental phase of this work with a one-dimensional task, adapted from [\cite{doro2019gradient}], where the agent has to throw a ball into a hole by hitting it with a putter as few times as possible. The policy is an \ac{RBF} network mapping the scalar state (the ball-hole distance) to the scalar action (the applied force). 
+The agent receives a reward of $-1$ for every intermediate hit, and receives a penalty of $-100$ for overshooting, \ie for throwing the ball over the hole. We refer to the latter event as a \textit{failure} in the following.
 The ball is initialized at a random position at each episode. If not for the initialization, the environment is deterministic, but has nonlinear dynamics, complicated by the variable friction of the course.
-We compare \ac{DPO} with REINFORCE. The latter learns the mean and standard deviation of a Gaussian policy.
+We compare \ac{DPO} with REINFORCE (see \mySubsec{subsec:alg} for more details on REINFORCE). The latter learns the mean and standard deviation of a Gaussian (or normal) policy, described in \mySubsec{subsec:polrep}.
 For \ac{DPO}, we discretize the state space into $12$ equally sized intervals. We use the \ac{BMDP} approach with Lipschitz constant\footnote{We assume to know the Lipschitz constant, but it should be estimated from data or hand-tuned in practice.} $L_{\Delta}=0.3$. We also evaluate \ac{DPO} under the simplifying assumption $L_{\Delta}=0$, obtaining better results in practice.
-The initial policy standard deviation and the learning rate for REINFORCE are tuned before to run the final experiment.
+The initial policy standard deviation and the learning rate for REINFORCE are tuned before running the final experiment.
 Details on hyperparameter selection are reported in \mySec{sec:exp2}.\\
 \newline
 Figure~\ref{fig:minigolf} shows average return and total failures over iterations (all algorithms use a constant batch size of 500 episodes per iteration). The performance of \ac{DPO} is comparable with that of REINFORCE. However, the $L_{\Delta}=0$ version is able to solve the task without any failure. This is not the case for REINFORCE, not even when the hyperparameters are explicitly selected as to minimize the number of failures (REINFORCE* in the figure). In fact, in this task, an almost-optimal stochastic policy has non-zero probability of overshooting. This source of risk is removed by \ac{DPO}, which is entirely deterministic. However, without explicit safety constraints, a failing policy can still be learned, as happens in the $L_{\Delta}=0.3$ case.
@@ -20,7 +20,7 @@ s'=f(s,a) = s - at + 0.5 \times dt^2,
 where $t=\frac{a}{d}$ and $d = \frac{5}{7} \times friction(s) \times 9.81$.
 Friction is computed as:
 \[
-frict(s) = friction\_low + \frac{friction\_high - friction\_low}{s_{max} - s_{min}} \times s
+frict(s) = friction\_low + \frac{friction\_high - friction\_low}{s_{max} - s_{min}} \times s,
 \]
 where $friction\_low=0.131$, $friction\_high=0.19$, $s_{max}=20$ and $s_{min}=0$. The Lipschitz constant $L_{\Delta}$ of the environment is computed as follows:\\
 \begin{align}
@@ -49,9 +49,9 @@ In the case of REINFORCE, a Gaussian noise $\eta\sim\Gauss(0,\sigma^2)$ is added
 We set a discount factor of $\gamma=0.99$ and a maximum task horizon of $20$ time steps.
 
 \section{Double Integrator} \label{sec:mass}
-Next, we consider a two-dimensional stochastic environment. In the Double Integrator task~\citep{recht2018tour}, a mass on a line must be brought to a target point by applying a force. The state is two-dimensional and includes distance from the goal and speed of the mass, both randomly initialized. The task is modeled as a special case of two-dimensional linear-quadratic regulator [\cite{peters2002policy}], which means the transition function is linear plus an additive zero-mean Gaussian noise and the optimal policy is also linear. A Gaussian noise on the output of the transition function makes the task stochastic. Hence, we use the constrained-max-likelihood approach for \ac{DPO} presented in \mySubsec{sec:app2.3}. We can still exploit the underlying linear dynamics of the task to easily generate fictitious samples. For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed from the equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. In Double Integrator, the Gaussian noise is added to each dimension of the state independently from the other one. Then, we can define a separate constraint (similar to~\eqref{p:26}) for each of the two dimensions of the state space, possibly with a different constant $L_{\wt{P}}$ for each dimension, to increase the precision of the abstract transition function. \todo{conviene esplicitare i constraints di questo caso particolare, che riguardano le sommatorie delle probabilità rispetto a ogni dimensione dello state space?}\\
+Next, we consider a two-dimensional stochastic environment. In the Double Integrator task [\cite{recht2018tour}], a mass on a line must be brought to a target point by applying a force. The state is two-dimensional and includes distance from the goal and speed of the mass, both randomly initialized. The task is modeled as a special case of two-dimensional linear-quadratic regulator [\cite{peters2002policy}], which means the transition function is linear plus an additive zero-mean Gaussian noise and the optimal policy is also linear. A Gaussian noise on the output of the transition function makes the task stochastic. Hence, we use the constrained-max-likelihood approach for \ac{DPO} presented in \mySubsec{sec:app2.3}. We can still exploit the underlying linear dynamics of the task to easily generate fictitious samples. For each abstract state $X$, we compute a fictitious sample for each unseen pair $(\wt{s}, a)$, where $\wt{s} \in X$ and $a$ is sampled from a state $s \in X$. The next states for fictitious samples are computed from the equation~\eqref{p:20} using $L_{\Delta}=0$, as if the noise was not present. In Double Integrator, the Gaussian noise is added to each dimension of the state independently from the other one. Then, we can define a separate constraint (similar to~\eqref{p:26}) for each of the two dimensions of the state space, possibly with a different constant $L_{\wt{P}}$ for each dimension, to increase the precision of the abstract transition function. \todo{conviene esplicitare i constraints di questo caso particolare, che riguardano le sommatorie delle probabilità rispetto a ogni dimensione dello state space?}\\
 \newline
-We study the performance of \ac{DPO} under different grid sizes. We also report the performance of \ac{PGPE}~\citep{sehnke2008policy} as a reference. As shown in Figure~\ref{fig:mass}, as expected, a very coarse discretization ($3\times3$) leads to large errors and instabilities, while a very fine one ($13\times13$) limits exploration, resulting in slower convergence than $9\times9$. \ac{PGPE} is very fast to find the optimal deterministic policy, but its randomization over policy parameters results in stochastic behavior.
+We study the performance of \ac{DPO} under different grid sizes. We also report the performance of \ac{PGPE} [\cite{sehnke2008policy}] as a reference. As shown in Figure~\ref{fig:mass}, as expected, a very coarse discretization ($3\times3$) leads to large errors and instabilities, while a very fine one ($13\times13$) limits exploration, resulting in slower convergence than $9\times9$. \ac{PGPE} is very fast to find the optimal deterministic policy, but its randomization over policy parameters results in stochastic behavior.
 %
 \begin{figure}[t]
 	\includegraphics[width=\columnwidth]{plots/minigolf.pdf}
@@ -82,7 +82,7 @@ $\nu=0.1$, $mass=1$ and $\tau = 1$.
 Since the term $\epsilon$ is a Gaussian noise, $P(s'|s,a)$ will be a Gaussian distribution.
 The reward function is:
 \begin{align}
-R(s) &= - (s^TQs + ara),\nonumber\\
+R(s) &= - (s^TQs + ra^2),\nonumber\\
 \end{align}
 where:
 \begin{align}
@@ -93,12 +93,12 @@ Q =
 \end{bmatrix},
 \end{align}
 and $r = 0.1 $.
-The policy used for this task is linear in the state, with initial parameters = $[-0.3, -0.3]$. For \ac{PGPE}, a factored Gaussian hyper-policy $\Gauss(\boldsymbol{\rho},\mathop{diag}(\boldsymbol{\sigma}^2)$ is defined over the two-dimensional parameter space, where $\boldsymbol{\sigma}=e^{\boldsymbol{\omega}}$, $\boldsymbol{\rho},\boldsymbol{\omega}\in\Reals^2$ are learned parameters, and $\boldsymbol{\rho}$ is always initialized to $[-0.3,-0.3]$. Both the components of $\boldsymbol{\sigma}$ are initialized to the same scalar $\sigma$, selected as a hyper-parameter. 
+The policy used for this task is linear in the state, with initial parameters = $[-0.3, -0.3]$. For \ac{PGPE}, a factored Gaussian hyper-policy $\Gauss\big(\boldsymbol{\rho},\mathop{diag}(\boldsymbol{\sigma}^2)\big)$ is defined over the two-dimensional parameter space, where $\boldsymbol{\sigma}=e^{\boldsymbol{\omega}}$, $\boldsymbol{\rho},\boldsymbol{\omega}\in\Reals^2$ are learned parameters, and $\boldsymbol{\rho}$ is always initialized to $[-0.3,-0.3]$. Both the components of $\boldsymbol{\sigma}$ are initialized to the same scalar $\sigma$, selected as a hyper-parameter. 
 We set a discount factor of $\gamma=0.95$ and a maximum task horizon of $20$ time steps.
 %
 \section{Robot Adaptation} \label{sec:safe}
 Finally, we consider a more realistic scenario. A mobile robot on a flat surface has to reach goal areas specified by the user. 
-The task is adapted from Safety Gym~\citep{ray2019benchmarking} and based on MuJoCo~\citep{todorov2012mujoco}. The robot has a speed-based actuator for turning and a force-based one for going forward and backward, resulting in a two-dimensional action. Its state is composed of typical sensor observations (accelerometer, velocimeter, gyroscope, magnetometer) and a compass pointing to the current goal, for a total of $9$ state variables. The goal is a randomly placed circular area, and the robot is rewarded for approaching it through a dense reward signal. Whenever reached, the goal is placed at a new random position. We initialize the robot with a good deterministic linear policy, learned with \ac{PGPE}, whose performance (averaged over $1000$ test episodes) is reported as a black dashed line in Figure~\ref{fig:recover}. Imagine this policy has been learned in a controlled environment, then the robot has been deployed in a facility where random actions are not permitted.\\
+The task is adapted from Safety Gym [\cite{ray2019benchmarking}] and based on MuJoCo [\cite{todorov2012mujoco}]. The robot has a speed-based actuator for turning and a force-based one for going forward and backward, resulting in a two-dimensional action. Its state is composed of typical sensor observations (accelerometer, velocimeter, gyroscope, magnetometer) and a compass pointing to the current goal, for a total of $9$ state variables. The goal is a randomly placed circular area, and the robot is rewarded for approaching it through a dense reward signal. Whenever reached, the goal is placed at a new random position. We initialize the robot with a good deterministic linear policy, learned with \ac{PGPE}, whose performance (averaged over $1000$ test episodes) is reported as a black dashed line in Figure~\ref{fig:recover}. Imagine this policy has been learned in a controlled environment, then the robot has been deployed in a facility where random actions are not permitted.\\
 \newline
 Then, a fault occurs, in the form of a fixed offset ($20\degree$) on the angle measured by the goal compass. The lower performance of the original policy after the fault is reported as a red dotted line in Figure~\ref{fig:recover}. A corresponding difference in the agent's behavior can be appreciated from the animation feature provided by MuJoCo to observe the simulation. Using \ac{DPO}, the agent can adapt the policy parameters to the environmental change, as shown in Figure~\ref{fig:recover}. The environment is deterministic. We also make the simplifying assumption $L_{\Delta}=0$ and show the results for a hand-tuned regularization parameter $\lambda$. For each policy update, a batch of $10$ episodes of $200$ steps each is collected, and we show the average return over each batch. The performance of \ac{PGPE} is also reported as a reference. Both algorithms are able to fine-tune the policy back to its original performance. However, \ac{DPO} does that without action randomization.
 
@@ -117,7 +117,7 @@ Then, a fault occurs, in the form of a fixed offset ($20\degree$) on the angle m
 \end{figure}
 
 \subsection*{Task Specifications}
-This is a custom environment built using the Safety Gym library~\citep{ray2019benchmarking}, which relies on the MuJoCo simulator~\citep{todorov2012mujoco}. The task is composed by a mobile robot that moves on a flat surface with the aim of reaching a randomly placed goal area. The state space considered in the task is composed by $9$ variables that represent the measurements of some sensors mounted on the robot. The robot is equipped with four standard sensors (accelerometer, velocimeter, gyroscope, magnetometer) and a compass that detects the orientation of the robot with regard to the goal area. Since the environment is flat, some of the data coming from the sensor (\eg vertical acceleration) are unnecessary and are simply discarded in order to reduce the dimensionality of the state space. 
+This is a custom environment built using the Safety Gym library [\cite{ray2019benchmarking}], which relies on the MuJoCo simulator [\cite{todorov2012mujoco}]. The task is composed by a mobile robot that moves on a flat surface with the aim of reaching a randomly placed goal area. The state space considered in the task is composed by $9$ variables that represent the measurements of some sensors mounted on the robot. The robot is equipped with four standard sensors (accelerometer, velocimeter, gyroscope, magnetometer) and a compass that detects the orientation of the robot with regard to the goal area. Since the environment is flat, some of the data coming from the sensor (\eg vertical acceleration) are unnecessary and are simply discarded in order to reduce the dimensionality of the state space. 
 The reduced state is composed by the following variables, reported here in the order in which they are considered in the implementation. All measurements are in the robot's frame of reference:
 \begin{itemize}
 	\item Linear acceleration in the plane (coordinates of a $2$D vector).
@@ -132,14 +132,14 @@ The reward function is defined as:
 R(s_t, a_t) = r \times \Delta distance\_from\_goal(t),
 \]
 where $r=1$, $\Delta distance\_from\_goal = distance(t) - distance(t-1)$ and $distance(t)$ measures the distance of the robot from the goal at time step $t$.
-To compute $\Delta distance\_from\_goal$, the environment keeps a memory of previous distances. This, together with the fact that $distance(t)$ cannot be computed from the available observations, prevents us to compute $R(s,a)$ for all states and actions, as assumed in the paper. However, since $R(s_t,a_t)$ is independent from $a_t$, we can estimate $R(X,a)$ for any abstract state $X$ and action $a$ simply by averaging the rewards obtained in the states of $X$, regardless of the performed action. The delayed effect of actions on rewards is captured by also estimating the abstract transition function anyway.
+To compute $\Delta distance\_from\_goal$, the environment keeps a memory of previous distances. This, together with the fact that $distance(t)$ cannot be computed from the available observations, prevents us to compute $R(s,a)$ for all states and actions, as assumed in \mySubsec{sec:mdpest}. However, since $R(s_t,a_t)$ is independent from $a_t$, we can estimate $R(X,a)$ for any abstract state $X$ and action $a$ simply by averaging the rewards obtained in the states of $X$, regardless of the performed action. The delayed effect of actions on rewards is captured by also estimating the abstract transition function anyway.
 For this task, we use a linear policy. The initial parameters, learned with \ac{PGPE} and representing an almost optimal policy before the compass fault, are reported here:
 \[
 \vtheta_{0} = 
-\begin{bmatrix}
-0.108& 0.022& 4.301& 0.108& 0.017& 0.112& 0.019& -0.179& -0.038\\
--0.004& 0.486& 0.105& -12.069& 1.070& -0.047& -0.222& 0.036& -0.398\\
-\end{bmatrix}.
+\medmath{\begin{bmatrix}
+0.11& 0.02& 4.30& 0.11& 0.02& 0.11& 0.02& -0.18& -0.04\\
+-0.01& 0.49& 0.11& -12.07& 1.07& -0.05& -0.22& 0.04& -0.40\\
+\end{bmatrix}}.
 \]
 For \ac{PGPE}, a factored Gaussian hyper-policy $\Gauss(\boldsymbol{\rho},\mathop{diag}(\boldsymbol{\sigma}^2))$ is defined over the $18$-dimensional parameter space, where $\boldsymbol{\sigma}=e^{\boldsymbol{\omega}}$, $\boldsymbol{\rho},\boldsymbol{\omega}\in\Reals^{18}$ are learned parameters, and $\boldsymbol{\rho}$ is initialized as $\vtheta_{0}$. All the components of $\boldsymbol{\sigma}$ are initialized to the same scalar $\sigma$, selected as a hyper-parameter.
 We set a discount factor of $1$ and a maximum task horizon of $200$ ($2000$ in some experiments) time steps.
@@ -153,7 +153,7 @@ In this section we provide further details on how the experiments presented in \
 For each task, we have to tune some hyper-parameters before applying the different algorithms. We do so via \emph{grid search}. We define a set of reasonable values for these parameters and we fix a criterion for choosing the best parameters to be used in the algorithm. We compute the sum over $n$ iterations of the performance measure (estimated from the collected samples at each iteration of the algorithm) and average it over $m$ independent runs, performed with different random seeds. 
 The values of $n$ and $m$ for the different experiments, together with other details, are reported in Table~\ref{tab:recap1}.
 The results of the grid search are reported in Tables~\ref{tab:t1}-\ref{tab:t5}.
-The bold values in the tables represent the combination of parameters used to perform the final experiments. For REINFORCE~\citep{williams1992simple}, the selected hyper-parameters are the step size $\alpha$ and the policy initial standard deviation $\sigma$. For \ac{DPO}, the learning rate $\alpha$ of the projection phase and the regularization coefficient $\lambda$ (see Section~\ref{sec:detail}). For \ac{PGPE}~\citep{sehnke2008policy}, the step size $\alpha$ and the hyper-policy initial standard deviation $\sigma$.
+The bold values in the tables represent the combination of parameters used to perform the final experiments. For REINFORCE [\cite{williams1992simple}], the selected hyper-parameters are the step size $\alpha$ and the policy initial standard deviation $\sigma$. For \ac{DPO}, the learning rate $\alpha$ of the projection phase and the regularization coefficient $\lambda$ (see Section~\ref{sec:detail}). For \ac{PGPE} [\cite{sehnke2008policy}], the step size $\alpha$ and the hyper-policy initial standard deviation $\sigma$.
 
 \begin{table}
 	\centering
@@ -201,7 +201,7 @@ For REINFORCE (Table~\ref{tab:t2}) we performed the final experiment with two di
 	\end{tabular} \caption{\label{tab:t2}Grid search for REINFORCE on Minigolf.}
 \end{table}
 
-\subsection*{Double Integrator} 
+\paragraph{Double Integrator} 
 Hyper-parameter selection was performed for the $9\times 9$ discretization, and kept fixed in the final experiments for other discretizations. We used a fixed $\alpha$ (also for the next task) since its effects on performance are negligible. 
 \begin{table}[H]
 	\centering
@@ -213,7 +213,7 @@ Hyper-parameter selection was performed for the $9\times 9$ discretization, and 
 		0.025 & \textbf{-94.76} & -95.91 & -97.80 \\
 		\bottomrule
 	\end{tabular} \caption{\label{tab:t3}Grid search for \ac{DPO} on Double Integrator.}
-\end{table}[H]
+\end{table}
 \begin{table}[H]
 	\centering
 	\begin{tabular}{l|*{3}{c}}
@@ -228,7 +228,7 @@ Hyper-parameter selection was performed for the $9\times 9$ discretization, and 
 	\end{tabular} \caption{\label{tab:t6}Grid search for \ac{PGPE} on Double Integrator.}
 \end{table}
 
-\subsection*{Robot Adaptation}
+\paragraph{Robot Adaptation}
 To verify the convergence of \ac{DPO}, we run it on a longer number of iterations than \ac{PGPE}. We also used a single, longer episode per iteration, which is more realistic. However, these settings were aligned for the final experiments, to make the comparison fair.
 \begin{table}[H]
 	\centering
@@ -256,7 +256,7 @@ To verify the convergence of \ac{DPO}, we run it on a longer number of iteration
 \end{table}
 
 \subsection{Final Experiments}
-The results of the final experiments (averaged over multiple runs performed with separate random seeds) are reported in the graphs in \mySec{sec:mini}, \mySec{sec:mass} and \mySec{sec:safe}. 
+The results of the final experiments (averaged over multiple runs performed with separate random seeds) are reported in the figures in \mySec{sec:mini}, \mySec{sec:mass} and \mySec{sec:safe}. 
 %Any differences among the algorithms on the same task (except from the selected hyper-parameters) that existed in the tuning phase were removed in the final experiments for fair comparison. 
 We recap the final configurations in Table~\ref{tab:recap2} for the sake of reproducibility.
 
@@ -295,7 +295,7 @@ We recap the final configurations in Table~\ref{tab:recap2} for the sake of repr
 \end{table}
 
 
-\section{Additional Results}\label{sec:exp3}
+\section{Qualitative Results}\label{sec:exp3}
 In this section, we provide additional results on \ac{DPO}, with the purpose of better understanding its workings in practice. 
 
 \subsection{Abstract state-space visualization in Robot Adaptation}

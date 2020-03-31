@@ -159,7 +159,7 @@ A possible policy parameterization for \ac{PS} methods is the one that uses the 
 where $\Aspace(s)$ is the set of actions that can be performed in state $s$ and $\phi(s,a)$ is a feature function depending both on state and action.
 
 \paragraph{Normal Policies:}
-A common parametrization for countinuous actions represented by real numbers, is the normal distribuion. The policy can be defined as the normal probability density over a scalar action, with mean $\mu$ and standard deviation $\sigma$ given by parametric function approximators that depend on the state:
+A common parametrization for countinuous actions represented by real numbers, is the normal distribution. The policy can be defined as the normal probability density over a scalar action, with mean $\mu$ and standard deviation $\sigma$ given by parametric function approximators that depend on the state:
 \begin{align} \pi_{\vtheta}(a|s) = \frac{1}{\sigma(s, \vtheta)\sqrt{2\pi}}\exp\Big( -\frac{(a -\mu(s, \vtheta))^2}{2\sigma(s, \vtheta)^2}\Big), \end{align}
 where $\mu(s, \vtheta) = \vtheta_{\mu}^{T} \vphi(s)$ and $\sigma(s, \vtheta) = \exp\Big( \vtheta_{\sigma}^{T}\vphi(s) \Big)$. The policy's parameter vector is $\vtheta = [\vtheta_{\mu}, \vtheta_{\sigma}]^{T}$. This is only a possible parameterization for the standard deviation $\sigma$ of the normal distribution, in this configuration the exploration is said to be \emph{heteroscedastic} because the standard deviation changes according to the state. Usually the standard deviation $\sigma$ of the normal distribution is represented by a single parameter that does not depend on the state.
 
