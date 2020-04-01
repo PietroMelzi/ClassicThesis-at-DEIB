@@ -141,7 +141,7 @@ The principal class of algorithms in \ac{PS} is composed by \acf{PG} methods. We
 
 \subsection{Policy Representations} \label{subsec:polrep}
 In our work, we focus on the optimization of deterministic parametric policies of the form $\pi_{\vtheta}:\Sspace\to\Aspace$, with $\vtheta\in\Theta\subseteq\Reals^{m\times D}$. We will often abbreviate $\pi_{\vtheta}$ as $\vtheta$ in subscripts and function arguments, \eg $V^{\vtheta} \equiv V^{\pi_{\vtheta}}$, $J(\vtheta) \equiv J(\pi_{\vtheta})$. The simplest way of parametrizing $\pi_{\vtheta}$ is by means of a linear mapping. The linear policy is defined as:
-\begin{align} \pi_{\vtheta}(s) = \vtheta^T\vphi(s), \end{align} where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of \acf{RBF}. An example of RBF is the Gaussian
+\begin{align} \pi_{\vtheta}(s) = \vtheta^T\vphi(s), \end{align} where $\vtheta\in\Reals^{m\times D}$ and $\vphi:\Sspace\to\Reals^m$ is a feature function. This can be the state itself or, for instance, a set of \acf{RBF}. An example of \ac{RBF} is the Gaussian
 \begin{align} \phi_i(s; \mu_i, \sigma_i) = \exp\left\{-{(s -\mu_i)^2}\big/{(2\sigma_i^2)}\right\}, \end{align}
 where $\mu_i$ and $\sigma_i$ are hyperparameters of the feature function $\phi_i$, $i=1,\dots,m$. According to the parameters learnt by the algorithm, we can distinguish between:
 \begin{itemize}
@@ -266,7 +266,7 @@ We also require our policy to be continuous both \wrt the input state and its pa
 	\end{align}
 \end{assumption}
 %
-\noindent We use the euclidean norm to measure distances on $\Sspace$, $\Aspace$ and $\Theta$, but everything works for general metrics.
+\noindent We use the Euclidean norm to measure distances on $\Sspace$, $\Aspace$ and $\Theta$, but everything works for general metrics.
 In the following, we will always assume that ${L_{P}(1+L_{\pi_{\vtheta}}) < \gamma^{-1}}$.
 These assumptions are enough to guarantee the Lipschitz continuity of the value functions \wrt states and actions:
 %
