@@ -8,7 +8,7 @@ According to [\cite{sutton2018reinforcement}], \acf{RL} consists in learning wha
 \section{Markov Decision Processes}\label{sec:mdp}
 \ac{MDPs} are a mathematical framework used for modeling \ac{RL} problems in which an \emph{agent}, by interacting with an \emph{environment}, learns how to achieve a goal. \ac{MDPs} are a formalization of sequential decision making, where the decision taken by the agent influences immediate and future rewards. The agent interacts with the environment by selecting the actions to perform and receiving rewards and information on the new situation. Rewards are provided by the environment in the form of scalar values and the agent aims to maximize the sum of rewards over time.
 \begin{definition}[MDP]\label{def:mdp}
-A \ac{MDP} is described by a six-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma, p_0 \rangle$, where:
+\sloppy A \acf{MDP} is described by a six-tuple $M=\langle \Sspace, \Aspace, P, R, \gamma, p_0 \rangle$, where:
 \begin{itemize}
 	\item $\Sspace$ is the state space, with $\Sspace\subseteq\Reals^N$.
 	\item $\Aspace$ is the action space, with $\Aspace\subseteq\Reals^D$.

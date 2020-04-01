@@ -284,12 +284,14 @@ This can be reformulated as a convex program as follows:
 \end{align}
 %
 We then add additional constraints that enforce in our estimate of $\wt{P}$ the regularity property we know to be true from~\eqref{p:27}:
+\clearpage
 %
 \begin{align}
 &\min_{\wt{P}\in\Reals^{|\Xspace|\times|\Aspace|\times|\Xspace|}} &&-\sum_{X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}}\log\wt{P}(X'|X,a) \nonumber\\
 &\text{subject to} &&\wt{P}(X'|X,a) \geq 0 &\forall X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X} \nonumber\\
 & &&\sum_{X'\in\Xspace_{\Dataset}}\wt{P}(X'|X,a) = 1 &\forall X\in\Xspace_{\Dataset}, a\in\Aspace_{X} \nonumber\\
-& &&\left|\wt{P}(X'|X,a) - \wt{P}(X'|X,\wt{a})\right| \leq L_{\wt{P}}\norm{a- \wt{a}} &\forall X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}. \label{p:26}
+& &&\left|\wt{P}(X'|X,a) - \wt{P}(X'|X,\wt{a})\right|& \nonumber \\
+& && \qquad \leq L_{\wt{P}}\norm{a- \wt{a}} &\forall X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}. \label{p:26}
 \end{align}
 %
 This is still a convex program and can be solved with standard optimization tools.
