@@ -1,0 +1,15 @@
+\markboth{\spacedlowsmallcaps{Appendix}}{\spacedlowsmallcaps{Appendix}}
+\chapter{Appendix}
+
+\section{Maximum Likelihood Problem in Double Integrator} \label{app:maxlike}
+In this section we present the maximum likelihood problem considered in the \emph{Double Integrator} task to estimate the abstract transition function of the $\delta$-\ac{MDP}. Starting from the convex program defined in \mySubsec{sec:app2.3} and motivated by the nature of noise in the task, described in \mySec{sec:mass}, we solve the following problem:
+\begin{align}
+&\min_{\wt{P}\in\Reals^{|\Xspace|\times|\Aspace|\times|\Xspace|}} &&-\sum_{X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}}\log\wt{P}(X'|X,a) \nonumber\\
+&\text{subject to} &&\wt{P}(X'|X,a) \geq 0 &\forall X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X} \nonumber\\
+& &&\sum_{X'\in\Xspace_{\Dataset}}\wt{P}(X'|X,a) = 1 &\forall X\in\Xspace_{\Dataset}, a\in\Aspace_{X} \nonumber\\
+& &&\left|\sum_{j \in J}\wt{P}(X'_{ij}|X,a) - \sum_{j \in J}\wt{P}(X'_{ij}|X,\wt{a})\right|& \nonumber \\
+& && \qquad \leq L_{\wt{P}_{i}}|a- \wt{a}| &\forall i \in I,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X} \label{p:i}\\
+& &&\left|\sum_{i \in I}\wt{P}(X'_{ij}|X,a) - \sum_{i \in I}\wt{P}(X'_{ij}|X,\wt{a})\right|& \nonumber \\
+& && \qquad \leq L_{\wt{P}_{j}}|a- \wt{a}| &\forall j \in J,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}. \label{p:j}
+\end{align}
+In the Double Integrator task, the state is two-dimensional and the state abstraction is performed by considering an $I \times J$ grid. We represent the single dimensions with the indexes $i \in I$ and $j \in J$, $X_{ij} \in \Xspace$ is the abstract state corresponding to the combination of $i$-th (\wrt I) and $j$-th (\wrt J) dimensions. The action is one-dimensional, hence we consider the absolute value $|a-\wt{a}|$ as measure of the action distance. In the problem we can use two (possibly) different Lipschitz constants $L_{\wt{P}_{i}}$ and $L_{\wt{P}_{j}}$, one for each dimension.
