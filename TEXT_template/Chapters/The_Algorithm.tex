@@ -157,7 +157,7 @@ In the case of stochastic environments, we follow a different approach for estim
 Details on \ac{BMDP} are provided in \mySubsec{subsec:bmdp}, details on the algorithm involving \ac{BMDP}s and the constrained optimization approach are provided in \mySec{sec:absmdp}. 
 
 %\subsection{Value Iteration on $\delta$-MDP}
-\subsection{Solving the abstract MDP}
+\subsection{Solving the abstract MDP}\label{subsec:solvmdp}
 In the previous paragraph, we have proposed a way to estimate the abstract transition function for state-action pairs not experienced by the agent, by exploiting the assumptions about the regularity of the environment. However, this still applies only to the actions actually performed by the agent. As a result, our approximation of the $\delta$-\ac{MDP} has a finite action set. This introduces a further model bias, but allows us to employ dynamic programming to find the optimal abstract policy. This kind of error can be reduced by increasing the number of collected episodes, or the control frequency. Furthermore, under our Lipschitz assumptions, the finite actions actually performed by the agent are supposedly good representatives for the other ones.\\
 \newline
 We solve this approximate $\delta$-\ac{MDP} via value iteration (\mySubsec{subsec:dp}), with a stopping condition (introduced for computational reasons) on the max-norm distance between consecutive state-value functions.

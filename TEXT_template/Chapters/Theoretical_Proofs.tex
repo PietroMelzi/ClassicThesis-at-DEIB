@@ -16,25 +16,32 @@ From the following lower bound we obtain a justification, under Lipschitz assump
 \end{restatable}
 
 \noindent This lower bound on performance improvement can serve as a surrogate optimization objective. In particular, the first term provides a criterion for selecting the abstract policy $\rho$, while the remaining terms provide a principled way to project it back into the original policy space. 
-We will perform these two tasks separately. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
+We perform these two tasks separately, as we said in \mySec{sec:algo} and more specifically in \mySubsec{subsec:solvmdp} and \mySubsec{subsec:proj}. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
 First, let us consider the projection part: 
 \begin{align}\label{eq:proj}
 \min_{\vtheta'\in\Theta} \norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
 + \lambda\norm{\vtheta'-\vtheta},
 \end{align}
-where $\lambda=L_{\text{shift}}\big/L_{Q^{\vtheta}}$. The first term accounts for the difference between the piecewise-constant policy and the updated parametric policy. It would be minimized by an exact projection. Since the error is weighted by the future-state distribution, we can use the samples collected with the original deterministic policy to approximately perform the projection, which is a regression problem. The second term accounts for the distributional mismatch between the future-state distributions of the two parametric policies. It can be added as a regularization term in the regression.
+where $\lambda=L_{\text{shift}}\big/L_{Q^{\vtheta}}$. The first term accounts for the difference between the piecewise-constant policy and the updated parametric policy. It would be minimized by an exact projection. Since the error is weighted by the future-state distribution, we can use the samples collected with the original deterministic policy to approximately perform the projection, which is a regression problem. The second term accounts for the distributional mismatch between the future-state distributions of the two parametric policies. It can be added as a regularization term in the regression (\mySubsec{subsec:proj}).
 %
 Now we focus on the problem of selecting the best abstract policy: 
 %
 \begin{align}
-\max_{\rho:\Xspace\to\Aspace}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s,
+\max_{\rho:\Xspace\to\Aspace}\sum_{X\in\Xspace}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s, \label{maxprob}
 \end{align}
 %
 and show that the optimal policy of the $\delta$-\ac{MDP} is indeed a reasonable choice. This problem has no trivial solution, as we do not know the advantage function $A^{\vtheta}$, and estimating it for all (infinite) states and actions with our limited samples is out of reach. Let us first define the equivalent maximization problem:
 \begin{align}\label{eq:W}
 \max_{\rho:\Xspace\to\Aspace} \sum_{X\in\Xspace}W^{\rho}(X),
 \end{align}
-where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$, obtained by observing that $V^{\vtheta}$ does not depend on $\rho$. This is equivalent to finding, for each abstract state $X\in\Xspace$, the action that maximizes $W^{\rho}(X)$. In \ac{DPO}, we solve the $\delta$-\ac{MDP} for an optimal (deterministic) abstract policy $\rho^{*}$, which maximizes the value function $V^{\rho}(X)$ for all $X\in\Xspace$. The following Theorem establishes the similarity of $W^{\rho}$ with $V^{\rho}$ under the Lipschitz assumptions, justifying our approach:
+where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$. $W^{\rho}(X)$ is obtained from (\ref{maxprob}), we observe that we can maximize the expression by independently maximize each term of the sum:
+\begin{align}
+	\max_{\rho:\Xspace\to\Aspace} &\sum_{X\in\Xspace}Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)A^{\vtheta}(s,\rho(X)) \de s \label{max1}\\
+	\max_{\rho:\Xspace\to\Aspace} &\sum_{X\in\Xspace}Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)\big(Q^{\vtheta}(s,\rho(X))-V^{\vtheta}(s)\big) \de s \label{max2}\\
+	\max_{\rho:\Xspace\to\Aspace} &\sum_{X\in\Xspace}Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X)) \de s, \label{max3}
+\end{align}
+where in (\ref{max1}) $Z_{\vtheta}(X)^{-1}$ does not depend on $\rho$, (\ref{max2}) is from the definition of advantage function and (\ref{max3}) by observing that $V^{\vtheta}$ does not depend on $\rho$.
+This is equivalent to finding, for each abstract state $X\in\Xspace$, the action that maximizes $W^{\rho}(X)$. In \ac{DPO}, we solve the $\delta$-\ac{MDP} for an optimal (deterministic) abstract policy $\rho^{*}$ (\mySubsec{subsec:solvmdp}), which maximizes the value function $V^{\rho}(X)$ for all $X\in\Xspace$. The following Theorem establishes the similarity of $W^{\rho}$ with $V^{\rho}$ under the Lipschitz assumptions, justifying our approach:
 %
 \begin{restatable}{theorem}{surr}\label{lem:surr}
 	Fixed a deterministic parametric policy ${\pi_{\vtheta}:\Sspace\to\Aspace}$ and a state partition $\Xspace$, for any deterministic abstract policy $\rho:\Xspace\to\Aspace$, let $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s,\rho(X))\de s$. Then, under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $X\in\Xspace$, provided $\rho(X) \in \pi_{\vtheta}(X)$:
@@ -42,14 +49,14 @@ where $W^{\rho}(X) = Z_{\vtheta}(X)^{-1}\int_{X}\delta^{\vtheta}(s)Q^{\vtheta}(s
 	|W^{\rho}(X) - V^{\rho}(X)| \leq \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
 	%\sum_{X'\in\Xspace}\wt{P}_{\vtheta}(X'|X,\rho(X))D(X'),
 	\end{align*}
-	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$ (\ie the set of actions performed in the abstract state $X$ according to $\pi_{\vtheta}$), $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
+	where $\pi_{\vtheta}(X)\subseteq\Aspace$ denotes the image of $X$ under $\pi_{\vtheta}$, \ie the set of actions performed in the states $s \in X$ according to $\pi_{\vtheta}$, $L_{V^{\vtheta}}$ is from Lemma~\ref{lem:lipval} and $D_{\max} = \max_{X\in\Xspace}\left\{D(X)\right\}$.
 \end{restatable}
 %
 \noindent An immediate consequence is that: 
 \begin{align}\label{eq:wstar}
 W^{\rho^*}(X) \geq V^{\rho^*}(X) - \frac{\gamma L_{V^{\vtheta}}D_{\max}}{1-\gamma},
 \end{align}
-\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-\ac{MDP} as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$ alone(fixed the projection operator), to our surrogate objective from Theorem~\ref{lem:boundj}.
+\ie for a sufficiently fine discretization (depending on the environment regularity) we can use the optimal policy $\rho^{*}$ of the $\delta$-\ac{MDP} as an approximate maximizer of~\eqref{eq:W}. This is also an approximately optimal solution, for $\rho$ alone (fixed the projection operator), to our surrogate objective from Theorem~\ref{lem:boundj}.
 %
 These theoretical bounds justify our definition of $\delta$-\ac{MDP} and how we use the optimal abstract policy to update the original parameters.\\
 \newline
