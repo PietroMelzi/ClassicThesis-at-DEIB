@@ -117,9 +117,9 @@ Finally, the target policy are updated as follows, in order to ensure stability 
 
 %\section{Safe \NoCaseChange{\acf{RL}}}\label{sec:saferl}
 \section{Safe Reinforcement Learning}\label{sec:saferl}
-In \ac{RL} several definitions of safety have been proposed and also methods that ensure a certain degree of safety according to some measures of risk. These definitions refer to different facets of safety, hence they are not conflicting to each other. In this section, firstly we provide an overview of the different methods that face the problem of safe learning, using the same classification proposed by \citeauthor{JMLR:v16:garcia15a}, then we focus on the more specific issue related to \emph{safe exploration}.\\
+In \ac{RL} several definitions of safety have been proposed and also methods that ensure a certain degree of safety according to some measures of risk. These definitions refer to different facets of safety, hence they are not conflicting to each other. In this section, firstly we provide an overview of the different methods that face the problem of safe learning, using the same classification proposed by \citeauthor{garcia2015}, then we focus on the more specific issue related to \emph{safe exploration}.\\
 \newline
-According to [\cite{JMLR:v16:garcia15a}], there exist two main trends for Safe \ac{RL}. The first one is based on the modification of the optimality criterion to introduce the concept of risk. The second is based on the modification of the exploration process, so as to avoid the exploration of actions that may lead the system to undesirable or catastrophic situations. Regarding the first trend, there are several alternatives to quantify risk:
+According to [\cite{garcia2015}], there exist two main trends for Safe \ac{RL}. The first one is based on the modification of the optimality criterion to introduce the concept of risk. The second is based on the modification of the exploration process, so as to avoid the exploration of actions that may lead the system to undesirable or catastrophic situations. Regarding the first trend, there are several alternatives to quantify risk:
 \begin{itemize}
 	\item \emph{Worst Case Criterion}: a policy is considered to be optimal if it has the maximum return \wrt the worst-case scenario, namely the worst possible trajectory in terms of return:
 	\begin{align}

@@ -191,9 +191,18 @@ In this section, we provide additional details on the estimation of the $\delta$
 &\leq L_{\Delta} \norm{s-\wt{s}} \qquad \text{ with } L_{\Delta}=\norm{A-\mathbb{I}}, \label{p:20}
 \end{align}
 where $\norm{A-\mathbb{I}}$ is the induced matrix norm of $A-\mathbb{I}$ compatible with the vector norm considered. In the case the latter is the Euclidean norm, the induced matrix norm is the \emph{spectral norm.}
-In general, the constant obtained in~\eqref{p:20} can be smaller than $\left(1 + L_{P}\right)$ and even equal to zero. When $\Delta(s,a)$ depends only on the performed action $a$ and not on the starting state $s$,  $A=\mathbb{I}$ and $L_{\Delta}=0$. From~\eqref{p:18}, if we consider $L_{\Delta} = 0$ instead of $L_{\Delta} = \left(1 + L_{P}\right)$, we obtain the equality $\Delta(s,a) = \Delta(\wt{s}, a)$ that allows to exactly predict the arriving state $\wt{s'}=f(\wt{s}, a)$ for an un-sampled pair$(\wt{s}, a)$ as $\wt{s'} = \wt{s} + \Delta(s,a)$, from a sampled pair $(s,a)$.\\
+In general, the constant obtained in~\eqref{p:20} can be smaller than $\left(1 + L_{P}\right)$ and even equal to zero. When $\Delta(s,a)$ depends only on the performed action $a$ and not on the starting state $s$,  $A=\mathbb{I}$ and $L_{\Delta}=0$. From~\eqref{p:18}, if we consider $L_{\Delta} = 0$ instead of $L_{\Delta} = \left(1 + L_{P}\right)$, we obtain the equality $\Delta(s,a) = \Delta(\wt{s}, a)$ that allows to exactly predict the arriving state $\wt{s'}=f(\wt{s}, a)$ for an un-sampled pair $(\wt{s}, a)$ as $\wt{s'} = \wt{s} + \Delta(s,a)$, from a sampled pair $(s,a)$.\\
 \newline
-Unfortunately, when $L_{\Delta} \neq 0$ we cannot generate "fictitious" samples exactly. However, we exploit the inequality in~\eqref{p:18} to obtain an interval (or a higher-dimensional region) including the unknown $\wt{s'}=f(\wt{s},a)$, instead of the exact point $\wt{s'}$. Here we show how to obtain the interval in the simple case of one-dimensional states:
+When $\Delta(s,a)$ also depends on the starting state $s$, the matrix $A$ is different from the identity matrix $\mathbb{I}$. If we know the matrix $A$ or we have high confidence on its estimation, we can use the matrix to calculate the arriving state $\wt{s'}$ for an un-sampled pair $(\wt{s},a)$. Reasoning on a generic dimension $i$ of the state space, we obtain:
+\begin{align}
+\Delta(s,a)_{i} &= (A-\mathbb{I})_{i}\cdot s + (B)_{i}\cdot a \nonumber \\
+\big(\Delta(s,a)-\Delta(\wt{s},a)\big)_{i} &= (A-\mathbb{I})_{i} \cdot (s-\wt{s}),
+\end{align}
+where $(A-\mathbb{I})_{i}$ and $(B)_{i}$ are the $i-th$ rows of matrices $(A-\mathbb{I})$ and $B$ and $\cdot$ is the scalar product between vectors. We can derive the $i$-th dimension of the arriving state $\wt{s'}$ as:
+\begin{align}
+\wt{s'}_{i} &= \wt{s}_{i} + \big(s'_{i} -s_{i}\big)-(A-\mathbb{I})_{i} \cdot (s-\wt{s}).
+\end{align}
+Unfortunately, when we are not able to estimate with precision the matrix $A$ we cannot generate "fictitious" samples exactly. However, we exploit the inequality in~\eqref{p:18} to obtain an interval (or a higher-dimensional region) including the unknown $\wt{s'}=f(\wt{s},a)$, instead of the exact point $\wt{s'}$. Here we show how to obtain the interval in the simple case of one-dimensional states:
 \begin{align}
 -L_{\Delta} \left|s - \wt{s}\right| &&\leq&& \Delta s (s,a) - \Delta s (\wt{s},a) &&\leq&& &L_{\Delta} \left|s - \wt{s}\right| \nonumber\\
 %
@@ -205,21 +214,12 @@ From~\eqref{p:19} we derive:
 \begin{align}
 	\wt{s'}=f(\wt{s}, a) \in \Big[\wt{s} + \Delta(s,a) - L_{\Delta} \left|s - \wt{s}\right|; \quad \wt{s} + \Delta(s,a) + L_{\Delta} \left|s - \wt{s}\right|\Big],
 \end{align}
-where $L_{\Delta} = |A - 1|$, where $A$ is a scalar and $|\cdot|$ the absolute value operator.
-When the state space is $N-$dimensional with $N\geq 2$, the interval that we estimate is an hyperrectangle. For each dimension $i \in [1;N]$, we derive the $i-th$ bound of the hyperrectangle as:
+where $L_{\Delta}$ is the exact (if known) or an estimated Lipschitz constant and $|\cdot|$ is the absolute value operator.
+When the state space is $N-$dimensional with $N\geq 2$, the interval that we estimate is an hyperrectangle. Since $|\Delta(s,a)-\Delta(\wt{s},a)|_{i} \leq \norm{\Delta(s,a)-\Delta(\wt{s},a)}$, for each dimension $i \in [1;N]$ we apply inequalities from (\ref{p:18}) and (\ref{p:19}) to derive the $i-th$ bound of the hyperrectangle as:
 \begin{align}
 	\wt{s'}_{i} \in \Big[\wt{s}_{i} + \Delta(s,a)_{i} - L_{\Delta} \norm{s - \wt{s}}; \quad \wt{s}_{i} + \Delta(s,a)_{i} + L_{\Delta} \norm{s - \wt{s}}\Big],
 \end{align}
-where the subscript $i$ refers to the $i-th$ dimension of the state and $L_{\Delta}$ is from (\ref{p:20}). If we have high confidence on the matrix A, we can reason on the inequality derived below:
-\begin{align}
-	\big(\Delta(s,a)-\Delta(\wt{s},a)\big)_{i} &= (A-\mathbb{I})_{i} \cdot (s-\wt{s}) \nonumber\\
-	&\leq \big| (A-\mathbb{I})_{i} \cdot (s - \wt{s})\big|,
-\end{align}
-where $(A-\mathbb{I})_{i}$ is the $i-th$ row of the matrix $(A-\mathbb{I})$ and $\cdot$ is the scalar product between vectors. We can derive a tigther bound for each dimension of the state $\wt{s'}$ similarly to (\ref{p:19}):
-\begin{align}
-	\wt{s'}_{i} \in \Big[\wt{s}_{i} + \Delta(s,a)_{i} - bound; \quad \wt{s}_{i} + \Delta(s,a)_{i} + bound \Big],
-\end{align}
-where $bound = \big| (A-\mathbb{I})_{i} \cdot (s - \wt{s})\big|$.\\
+where $L_{\Delta}$ is an estimation of the Lipschitz constant in (\ref{p:20}) and $\norm{\cdot}$ is the Euclidean norm operator.\\
 \newline
 In tasks where a lot of precision is required in order to estimate $\wt{s'}$, the computed intervals could be not tight enough to represent $\wt{s'}$ with the required accuracy. We can increase the precision by computing a second interval on $\wt{s'}$ and considering the intersection of the two intervals on $\wt{s'}$ as the most precise estimate. The second interval is calculated by considering two state-action pairs having the \emph{same} state and different \emph{actions}: the sampled pair $(\wt{s},\wt{a})$ and the un-sampled pair $(\wt{s},a)$.
 \begin{align}
@@ -284,7 +284,6 @@ This can be reformulated as a convex program as follows:
 \end{align}
 %
 We then add additional constraints that enforce in our estimate of $\wt{P}$ the regularity property we know to be true from~\eqref{p:27}:
-\clearpage
 %
 \begin{align}
 &\min_{\wt{P}\in\Reals^{|\Xspace|\times|\Aspace|\times|\Xspace|}} &&-\sum_{X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}}\log\wt{P}(X'|X,a) \nonumber\\
