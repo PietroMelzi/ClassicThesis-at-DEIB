@@ -17,15 +17,15 @@ In the Double Integrator task, the state is two-dimensional and the state abstra
 %Starting from the Assumption \ref{ass:lipmdp2}, we can derive the Lipschitz constant $L_{TV}$ as:
 The Lipschitz constant $L_{\wt{P}_{i}}$ for a generic dimension can be derived starting from the Assumption \ref{ass:lipmdp2}. We use the \emph{Pinsker's inequality} to bound the \ac{TV} distance:
 \begin{align}
-\mathop{TV}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right) &\leq \sqrt{\frac{1}{2}\mathop{D}_{KL}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right)}, \label{eq:pink}
+\mathop{TV}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right) &\leq \sqrt{\frac{1}{2}\mathop{D_{KL}}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right)}, \label{eq:pink}
 \end{align}
 where $\mathop{D}_{KL}$ is the \emph{Kullback–Leibler divergence}. In the case of two Gaussian distributions $\Gauss_1$ and $\Gauss_2$ with the same standard deviation $\sigma$ and different means $\mu_1$ and $\mu_2$, we have:
 \begin{align}
-	\mathop{D}_{KL}\left(\Gauss_1, \Gauss_2\right) &= \frac{\sigma^2 + (\mu_1 - \mu_2)^2}{2\sigma^2} - \frac{1}{2} \nonumber\\
+	\mathop{D_{KL}}\left(\Gauss_1, \Gauss_2\right) &= \frac{\sigma^2 + (\mu_1 - \mu_2)^2}{2\sigma^2} - \frac{1}{2} \nonumber\\
 	&= \frac{(\mu_1 - \mu_2)^2}{2\sigma^2}.
 \end{align}
-In the Double Integrator task, a Gaussian noise $\Gauss(0, \sigma_{i})$ is added to each dimension $i$ of the arriving state. If we consider each dimension separately, as we did in the maximum likelihood problem, $P(\cdot|s_{i},a)$ is a Gaussian distribution $\Gauss(s'_{i}, \sigma_{i})$, where $s'_{i}$ is the $i$-th dimension of the arriving state in absence of noise and $\sigma_{i}$ is the standard deviation of the Gaussian zero-mean noise added to $s'_{i}$. Going back to (\ref{eq:pink}) we write:
+In the Double Integrator task, a Gaussian noise $\Gauss(0, \sigma_{i})$ is added to each dimension $i$ of the arriving state. If we consider each dimension separately, as we did in the maximum likelihood problem, $P(\cdot|s_{i},a)$ is a Gaussian distribution $\Gauss(s'_{i}, \sigma_{i})$, where $s'_{i}$ is the $i$-th dimension of the arriving state in absence of noise and $\sigma_{i}$ is the standard deviation of the Gaussian zero-mean noise added to $s'_{i}$. In the Double Integrator task $s' = As + Ba$, hence going back to (\ref{eq:pink}) we write:
 \begin{align}
-	\mathop{TV}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right) \leq \Big| \frac{s'_{i} - \wt{s'}_{i}}{2\sigma_{i}}\Big|,
+	\mathop{TV}\left(P(\cdot|s_{i},a), P(\cdot| s_{i},\wt{a})\right) \leq \Big| \frac{B_{i} (a - \wt{a})}{2\sigma_{i}}\Big|,
 \end{align}
-where $\Big| \frac{1}{2\sigma_{i}} \Big| = L_{TV}$. Since $L_{\wt{P}_{i}}=2L_{TV}$, the Lipschitz constant of the problem, for the $i$-th dimension, is $L_{\wt{P}_{i}} = \Big| \frac{1}{\sigma_{i}} \Big|$.
+where $\Big| \frac{B_{i}}{2\sigma_{i}} \Big| = L_{TV}$, where $B_{i}$ is the $i$-th row of matrix $B$ (a scalar in the considered task). Since $L_{\wt{P}_{i}}=2L_{TV}$, the Lipschitz constant of the problem, for the $i$-th dimension, is $L_{\wt{P}_{i}} = \Big| \frac{B_{i}}{\sigma_{i}} \Big|$.
