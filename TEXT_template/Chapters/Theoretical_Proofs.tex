@@ -1,5 +1,5 @@
 \chapter{Theoretical Proofs} \label{chap:proofs}
-In this chapter we provide some theoretical proofs that sustain the goodness of the solution proposed with the \ac{DPO} algorithm and provide further insights that justify the approach we used in the specific phases of the algorithm. Firstly, we enunciate some theorems in \mySec{sec:theo}, together with some considerations that confirm the consistency of \ac{DPO}. The proofs of these theorems are provided in \mySec{sec:proo}.
+In this chapter we provide some theoretical proofs that sustain the goodness of the solution proposed with the \ac{DPO} algorithm and provide further insights that justify the approach we used in the specific phases of the algorithm. Firstly, we enunciate some theorems in \MySec{sec:theo}, together with some considerations that confirm the consistency of \ac{DPO}. The proofs of these theorems are provided in \MySec{sec:proo}.
 
 \section{Theorems} \label{sec:theo}
 The overall goal that we consider in each iteration of the algorithm is the maximization of performance improvement $J(\vtheta') - J(\vtheta)$.
@@ -16,7 +16,7 @@ From the following lower bound we obtain a justification, under Lipschitz assump
 \end{restatable}
 
 \noindent This lower bound on performance improvement can serve as a surrogate optimization objective. In particular, the first term provides a criterion for selecting the abstract policy $\rho$, while the remaining terms provide a principled way to project it back into the original policy space. 
-We perform these two tasks separately, as we said in \mySec{sec:algo} and more specifically in \mySubsec{subsec:solvmdp} and \mySubsec{subsec:proj}. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
+We perform these two tasks separately, as we said in \MySec{sec:algo} and more specifically in \mySubsec{subsec:solvmdp} and \mySubsec{subsec:proj}. This is clearly a simplification, as the surrogate objective should be optimized jointly for $\rho$ and $\vtheta'$. 
 First, let us consider the projection part: 
 \begin{align}\label{eq:proj}
 \min_{\vtheta'\in\Theta} \norm[\delta^{\vtheta}]{\Conc\rho - \pi_{\vtheta'}} 
@@ -65,7 +65,7 @@ In addition, this analysis provides some insight into how choosing the partition
 Intuitively, we must guarantee a sufficient amount of variety among the candidate actions of each abstract state. This can be seen as a trade-off between (passive) exploration and precision. The state partition should be chosen so as to optimize this trade-off, which may require an adaptive discretization schedule. We leave the theoretical study of this problem as future work, instead providing a sensitivity analysis to grid resolution in Section~\ref{sec:mass}.
 
 \section{Proofs} \label{sec:proo}
-In this section, we provide complete proofs for the formal statements presented in \mySec{sec:theo}. In order to do that, we also introduce and prove some auxiliary lemmas that involve the advantage function $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(s)$, defined according to a policy $\pi_{\vtheta}$. This function is Lipschitz \wrt states and actions:
+In this section, we provide complete proofs for the formal statements presented in \MySec{sec:theo}. In order to do that, we also introduce and prove some auxiliary lemmas that involve the advantage function $A^{\vtheta}(s,a)\coloneqq Q^{\vtheta}(s,a) - V^{\vtheta}(s)$, defined according to a policy $\pi_{\vtheta}$. This function is Lipschitz \wrt states and actions:
 \begin{restatable}{lemma}{adv1}\label{lem:adv1}
 	Under Assumptions~\ref{ass:lipmdp} and~\ref{ass:lippol}, for all $\vtheta\in\Theta$, $s,\wt{s}\in\Sspace$ and $a,\wt{a}\in\Aspace$:
 	\begin{align*}

@@ -1,5 +1,5 @@
 \chapter{State of the Art} \label{chap:state}
-In this chapter we present two topics from \ac{RL} that are crucial in our work, namely \acf{PG} (\mySec{sec:pg}) and Safe Reinforcement Learning (\mySec{sec:saferl}). We also provide the description of some existing algorithm or implementation strategies, some of them representing the state of the art, that we consider in this work in order to make a comparison with our algorithm.
+In this chapter we present two topics from \ac{RL} that are crucial in our work, namely \acf{PG} (\MySec{sec:pg}) and Safe Reinforcement Learning (\MySec{sec:saferl}). We also provide the description of some existing algorithm or implementation strategies, some of them representing the state of the art, that we consider in this work in order to make a comparison with our algorithm.
 
 \section{Policy Gradient Methods} \label{sec:pg}
 Most of the algorithms in \ac{PS} learn the parameterized policy $\pi_{\vtheta}$, with $\vtheta \in \Theta \subseteq \mathbb{R}^d$, according to the gradient of some scalar performance measure $J(\vtheta)$ with respect to the policy parameter $\vtheta$. These methods seek to maximize performance, so they perform gradient ascent updating the parameter $\vtheta$ in the direction of $\widehat{\nabla}J(\vtheta)$:

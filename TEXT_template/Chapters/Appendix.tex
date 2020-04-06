@@ -2,7 +2,7 @@
 \chapter{Appendix}
 
 \section{Maximum Likelihood Problem in Double Integrator} \label{app:maxlike}
-In this section we present the maximum likelihood problem considered in the \emph{Double Integrator} task to estimate the abstract transition function of the $\delta$-\ac{MDP}. Starting from the convex program defined in \mySubsec{sec:app2.3} and motivated by the nature of noise in the task, described in \mySec{sec:mass}, we solve the following problem:
+In this section we present the maximum likelihood problem considered in the \emph{Double Integrator} task to estimate the abstract transition function of the $\delta$-\ac{MDP}. Starting from the convex program defined in \mySubsec{sec:app2.3} and motivated by the nature of noise in the task, described in \MySec{sec:mass}, we solve the following problem:
 \begin{align}
 &\min_{\wt{P}\in\Reals^{|\Xspace|\times|\Aspace|\times|\Xspace|}} &&-\sum_{X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X}}\log\wt{P}(X'|X,a) \nonumber\\
 &\text{subject to} &&\wt{P}(X'|X,a) \geq 0 &\forall X,X'\in\Xspace_{\Dataset}, a\in\Aspace_{X} \nonumber\\
